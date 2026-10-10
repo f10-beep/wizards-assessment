@@ -62,6 +62,14 @@ commit history):
   hardening
 - Local infra (Docker Postgres, test-schema isolation fix)
 
+## How this was built
+
+Built with Claude Code, one user story per session, each reviewed (diff
+read, manually smoke-tested through the UI) before committing. Also
+verified via `npm run typecheck`/`lint`/`build` and automated tests
+(unit/integration against real Postgres, including concurrency tests for
+S1/S2 under `src/server/events/rsvp.test.ts`).
+
 ## Before real traffic
 
 What's stubbed/simplified, and what I'd harden first:
