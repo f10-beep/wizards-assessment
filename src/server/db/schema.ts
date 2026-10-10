@@ -16,6 +16,15 @@ export const rsvps = pgTable(
   "rsvps",
   {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    // drizzle-kit always schema-qualifies a generated FK target to
+    // "public" even though this table declares no schema — fine for the
+    // one real database, but it broke per-test-suite Postgres-schema
+    // isolation (src/server/db/testDb.ts), since the FK ended up bound to
+    // the real public.events instead of each test's own schema. Fixed in
+    // drizzle/0002_fix_rsvp_event_fk_schema_qualification.sql by
+    // re-adding the constraint unqualified. If schema.ts changes trigger
+    // a fresh `drizzle-kit generate` touching this FK, re-check the
+    // generated SQL doesn't reintroduce the "public" qualifier.
     eventId: integer("event_id")
       .notNull()
       .references(() => events.id, { onDelete: "cascade" }),

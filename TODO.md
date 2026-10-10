@@ -38,6 +38,14 @@ than letting them pile up.
 
 ## Done
 
+- [x] Fixed per-test-suite Postgres-schema isolation (ADR 0004): the
+      generated FK on `rsvps.event_id` was schema-qualified to
+      `"public"."events"`, so every test schema's RSVP inserts actually
+      checked against the real dev `events` table instead of that test
+      schema's own — only "worked" by coincidence while both tables'
+      identity sequences stayed in the same low range. Fixed via
+      `drizzle/0002_fix_rsvp_event_fk_schema_qualification.sql`; see the
+      comment on `rsvps.eventId` in `src/server/db/schema.ts`.
 - [x] Fixed two real bugs found smoke-testing "My events": (1) its input
       wrote straight into query input on every keystroke with no
       debounce (unlike the browse page's search box), firing a request
