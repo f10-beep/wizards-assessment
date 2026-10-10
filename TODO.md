@@ -43,6 +43,19 @@ than letting them pile up.
 
 ## Done
 
+- [x] S1 validation: confirmed an event never exceeds capacity under
+      concurrent RSVPs, enforced server-side. Proof is
+      `src/server/events/rsvp.test.ts`'s "never overbooks under
+      concurrent RSVP attempts" — real Postgres, separate connections,
+      10 players racing for 1 seat. Strengthened it after finding the
+      original (5-player, no pool pre-warm) version would pass even
+      with the `FOR UPDATE` lock removed from `rsvp.ts`: on a fast local
+      loopback DB, `pool.connect()`'s connection-establishment latency
+      incidentally serialized the "concurrent" calls before they ever
+      raced, masking a broken capacity check. Pre-warming the pool
+      (opening one connection per player before racing) forces genuine
+      concurrency; verified the test now fails (9-10 confirmed instead
+      of 1) with the lock removed and passes with it restored.
 - [x] O2: organizer sees the attendee list for events they created.
       `events.organizerPrincipal` (ADR 0006) is now enforced as
       ownership, not just recorded: `getEventWithAttendees`

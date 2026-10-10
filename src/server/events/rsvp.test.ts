@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { after, before, suite, test } from "node:test";
+import { sql } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { createTestDb } from "../db/testDb";
 import { cancelRsvp, hasRsvped, rsvpToEvent } from "./rsvp";
@@ -84,7 +85,15 @@ suite("rsvpToEvent", () => {
       .returning({ id: schema.events.id });
     const raceEventId = raceEvent!.id;
 
-    const players = ["A", "B", "C", "D", "E"];
+    const players = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
+
+    // Open one pool connection per player before racing. Without this,
+    // pool.connect()'s connection-establishment latency dominates and
+    // the calls below end up serialized by accident — passing even if
+    // the capacity check in rsvp.ts were broken — instead of genuinely
+    // racing, which is the thing this test exists to catch.
+    await Promise.all(players.map(() => db.execute(sql`select 1`)));
+
     const results = await Promise.all(
       players.map((name) => rsvpToEvent(db, raceEventId, name)),
     );
