@@ -12,7 +12,10 @@ before proposing a change to one of them.
 
 ## Stack
 
-Not yet chosen. Revisit via a follow-up ADR once one is picked.
+Next.js (App Router, TypeScript) + tRPC on Vercel, Postgres (Neon) via
+Drizzle. MVP push is polling behind a transport-agnostic client
+interface. See [ADR 0002](./docs/decisions/0002-mvp-stack.md) for the
+reasoning and alternatives considered.
 
 ## Priorities
 
