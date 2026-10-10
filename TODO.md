@@ -8,13 +8,6 @@ than letting them pile up.
 
 ## Next
 
-- [ ] O2: organizer sees the attendee list for their own events, gated
-      by `requireOrganizer` *and* the first place
-      `events.organizerPrincipal` (ADR 0006) needs to be enforced as
-      ownership, not just recorded: the query must filter by
-      `organizerPrincipal = <caller>` so one organizer can't read
-      another's roster (plausibly real contact info, since
-      `userPrincipal` is email-shaped).
 - [ ] Real identity provider (if/when required — likely once O2 needs
       real access control, not just an MVP demo): replace the
       manually-typed `userPrincipal`/`organizerPrincipal`/`isOrganizer`
@@ -45,6 +38,17 @@ than letting them pile up.
 
 ## Done
 
+- [x] O2: organizer sees the attendee list for events they created.
+      `events.organizerPrincipal` (ADR 0006) is now enforced as
+      ownership, not just recorded: `getEventWithAttendees`
+      (`src/server/events/attendees.ts`) filters by
+      `organizerPrincipal = <caller>` in the same query that looks up
+      the event, so "doesn't exist" and "isn't yours" are
+      indistinguishable (`NOT_FOUND` either way) and one organizer can
+      never read another's roster. Surfaced inline on the event detail
+      page (`EventDetails.tsx`'s `AttendeeRoster`) rather than a
+      separate page — it only renders once the scoped query succeeds,
+      so viewing an event you don't organize just shows nothing extra.
 - [x] O1: organizer posts an event (title, game type, date/time,
       location, capacity). Gated by an explicit, checked organizer-role
       claim (`requireOrganizer`); ownership recorded via

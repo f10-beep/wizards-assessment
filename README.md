@@ -105,6 +105,13 @@ rather than here.
   concern (ownership of a specific event, for a planned attendee-list
   story to scope by), not a stand-in for the role check. See
   [ADR 0006](./docs/decisions/0006-organizer-role-claim.md).
+- **The attendee roster lives on the event's own detail page, not a
+  separate "my posted events" screen.** An organizer who created an
+  event already lands there (e.g. right after posting it), and the
+  roster query itself is scoped to `organizerPrincipal = <caller>`
+  ([ADR 0006](./docs/decisions/0006-organizer-role-claim.md)), so it
+  simply doesn't render for anyone else — no separate page, nav link, or
+  error state needed for "not your event."
 - **"My events" includes past events, not just upcoming ones.** The story
   says "everything I've RSVPed to," and unlike the browse list there's no
   "upcoming" qualifier — soonest-first is just the sort order, not a

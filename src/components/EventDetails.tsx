@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
+import { useStoredIsOrganizer } from "@/lib/roles";
 import { useStoredUserPrincipal } from "@/lib/userPrincipal";
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
@@ -113,7 +114,57 @@ function EventDetailsCard({ event }: { event: EventDetailData }) {
       </div>
 
       <RsvpForm eventId={event.id} isFull={isFull} />
+      <AttendeeRoster eventId={event.id} />
     </article>
+  );
+}
+
+/**
+ * Only renders for the actor that organizes this specific event — the
+ * attendees.query itself scopes by organizerPrincipal (see
+ * getEventWithAttendees), so a NOT_FOUND here just means "not yours" and
+ * is treated as "nothing to show," not an error, since most organizers
+ * viewing most events won't own them.
+ */
+function AttendeeRoster({ eventId }: { eventId: number }) {
+  const userPrincipal = useStoredUserPrincipal();
+  const isOrganizer = useStoredIsOrganizer();
+  const trimmedPrincipal = userPrincipal.trim();
+  const enabled = isOrganizer && trimmedPrincipal.length > 0;
+
+  const attendeesQuery = trpc.events.attendees.useQuery(
+    { eventId, organizerPrincipal: trimmedPrincipal, isOrganizer },
+    {
+      enabled,
+      // Keep polling for new RSVPs once we know we own this event, but
+      // stop once NOT_FOUND confirms we don't — that fact can't change
+      // while we're looking at the page, so refetching it on an interval
+      // would just be a guaranteed-failing request every 30s.
+      refetchInterval: (query) => (query.state.error ? false : POLL_INTERVAL_MS),
+    },
+  );
+
+  if (!enabled || !attendeesQuery.data) {
+    return null;
+  }
+
+  const { attendees } = attendeesQuery.data;
+
+  return (
+    <div className="mt-6 border-t border-slate-200 pt-4">
+      <h2 className="text-sm font-semibold text-slate-900">
+        Attendees ({attendees.length})
+      </h2>
+      {attendees.length === 0 ? (
+        <p className="mt-2 text-sm text-slate-500">No RSVPs yet.</p>
+      ) : (
+        <ul className="mt-2 flex flex-col gap-1 text-sm text-slate-600">
+          {attendees.map((attendee) => (
+            <li key={attendee.userPrincipal}>{attendee.userPrincipal}</li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

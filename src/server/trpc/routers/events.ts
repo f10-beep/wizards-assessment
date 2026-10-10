@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { requireOrganizer } from "../../auth/roles";
 import { db } from "../../db/index";
+import { getEventWithAttendees } from "../../events/attendees";
 import { createEvent } from "../../events/createEvent";
 import {
   getEventById,
@@ -86,6 +87,49 @@ export const eventsRouter = router({
       }
 
       return { status: "created" as const, id: result.id };
+    }),
+
+  // Organizer-facing: the attendee roster for an event, scoped to the
+  // event's own organizerPrincipal in the query itself (see
+  // getEventWithAttendees / ADR 0006) — NOT_FOUND covers both "doesn't
+  // exist" and "isn't yours" so a caller can't tell them apart.
+  attendees: publicProcedure
+    .input(
+      z.object({
+        eventId: z.number().int().positive(),
+        organizerPrincipal: z.string().trim().min(1).max(100),
+        isOrganizer: z.boolean(),
+      }),
+    )
+    .query(async ({ input }) => {
+      requireOrganizer({
+        principal: input.organizerPrincipal,
+        isOrganizer: input.isOrganizer,
+      });
+
+      const result = await getEventWithAttendees(
+        db,
+        input.eventId,
+        input.organizerPrincipal,
+      );
+
+      if (!result) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Event not found",
+        });
+      }
+
+      return {
+        event: {
+          ...result.event,
+          startsAt: result.event.startsAt.toISOString(),
+        },
+        attendees: result.attendees.map((attendee) => ({
+          ...attendee,
+          rsvpedAt: attendee.rsvpedAt.toISOString(),
+        })),
+      };
     }),
 
   myEvents: publicProcedure
