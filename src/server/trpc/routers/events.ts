@@ -4,6 +4,7 @@ import { db } from "../../db/index";
 import {
   getEventById,
   listGameTypes,
+  listMyEvents,
   listUpcomingEvents,
 } from "../../events/listEvents";
 import { cancelRsvp, hasRsvped, rsvpToEvent } from "../../events/rsvp";
@@ -42,6 +43,16 @@ export const eventsRouter = router({
     }),
 
   gameTypes: publicProcedure.query(() => listGameTypes(db)),
+
+  myEvents: publicProcedure
+    .input(z.object({ userPrincipal: z.string().trim().min(1).max(100) }))
+    .query(async ({ input }) => {
+      const mine = await listMyEvents(db, input.userPrincipal);
+      return mine.map((event) => ({
+        ...event,
+        startsAt: event.startsAt.toISOString(),
+      }));
+    }),
 
   rsvp: publicProcedure
     .input(

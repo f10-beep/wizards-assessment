@@ -2,7 +2,12 @@ import assert from "node:assert/strict";
 import { after, before, suite, test } from "node:test";
 import * as schema from "../db/schema";
 import { createTestDb } from "../db/testDb";
-import { getEventById, listGameTypes, listUpcomingEvents } from "./listEvents";
+import {
+  getEventById,
+  listGameTypes,
+  listMyEvents,
+  listUpcomingEvents,
+} from "./listEvents";
 
 const HOUR = 60 * 60 * 1000;
 const now = new Date("2026-06-01T12:00:00Z");
@@ -121,6 +126,93 @@ suite("listUpcomingEvents", () => {
       "Dungeons & Dragons",
       "Magic: The Gathering",
     ]);
+  });
+});
+
+suite("listMyEvents", () => {
+  let db: Awaited<ReturnType<typeof createTestDb>>["db"];
+  let cleanup: () => Promise<void>;
+
+  before(async () => {
+    ({ db, cleanup } = await createTestDb());
+
+    const seeded = await db
+      .insert(schema.events)
+      .values([
+        {
+          title: "Past Draft Night",
+          gameType: "Magic: The Gathering",
+          location: "Old Store",
+          startsAt: new Date(now.getTime() - HOUR),
+          capacity: 8,
+        },
+        {
+          title: "Friday Night Magic",
+          gameType: "Magic: The Gathering",
+          location: "The Round Table Games",
+          startsAt: new Date(now.getTime() + 2 * HOUR),
+          capacity: 4,
+        },
+        {
+          title: "Beginner D&D One-Shot",
+          gameType: "Dungeons & Dragons",
+          location: "Spellbound Hobbies",
+          startsAt: new Date(now.getTime() + HOUR),
+          capacity: 6,
+        },
+        {
+          title: "Catan Night",
+          gameType: "Catan",
+          location: "Board & Brew Café",
+          startsAt: new Date(now.getTime() + 3 * HOUR),
+          capacity: 2,
+        },
+      ])
+      .returning({ id: schema.events.id, title: schema.events.title });
+
+    const byTitle = Object.fromEntries(seeded.map((e) => [e.title, e.id]));
+
+    await db.insert(schema.rsvps).values([
+      { eventId: byTitle["Past Draft Night"]!, userPrincipal: "Alex" },
+      { eventId: byTitle["Friday Night Magic"]!, userPrincipal: "Alex" },
+      { eventId: byTitle["Friday Night Magic"]!, userPrincipal: "Priya" },
+      { eventId: byTitle["Beginner D&D One-Shot"]!, userPrincipal: "Alex" },
+      { eventId: byTitle["Catan Night"]!, userPrincipal: "Priya" },
+    ]);
+  });
+
+  after(() => cleanup());
+
+  test("includes only events the named principal RSVPed to", async () => {
+    const results = await listMyEvents(db, "Alex");
+    assert.deepEqual(
+      results.map((e) => e.title),
+      ["Past Draft Night", "Beginner D&D One-Shot", "Friday Night Magic"],
+    );
+  });
+
+  test("includes past events, not just upcoming ones", async () => {
+    const results = await listMyEvents(db, "Alex");
+    assert.ok(results.some((e) => e.title === "Past Draft Night"));
+  });
+
+  test("sorts soonest first", async () => {
+    const results = await listMyEvents(db, "Alex");
+    assert.deepEqual(
+      results.map((e) => e.startsAt.getTime()),
+      [...results.map((e) => e.startsAt.getTime())].sort((a, b) => a - b),
+    );
+  });
+
+  test("reports the event's live attendee count, not just this principal's own RSVP", async () => {
+    const results = await listMyEvents(db, "Priya");
+    const friday = results.find((e) => e.title === "Friday Night Magic");
+    assert.equal(friday?.attendeeCount, 2);
+  });
+
+  test("returns nothing for a principal with no RSVPs", async () => {
+    const results = await listMyEvents(db, "Nobody");
+    assert.deepEqual(results, []);
   });
 });
 

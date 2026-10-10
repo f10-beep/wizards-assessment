@@ -1,4 +1,5 @@
 import { and, asc, count, eq, gte, ilike, or, type SQL } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import type { db as Db } from "../db/index";
 import { events, rsvps } from "../db/schema";
 
@@ -94,6 +95,43 @@ export async function getEventById(
     .groupBy(events.id);
 
   return rows[0];
+}
+
+/**
+ * Every event a user principal has RSVPed to (past or upcoming — "my
+ * events" is a history, not just a browse list), soonest-starting first.
+ * attendeeCount is still the live total for the event, not just this
+ * principal's own RSVP.
+ */
+export async function listMyEvents(
+  db: typeof Db,
+  userPrincipal: string,
+): Promise<EventListItem[]> {
+  const myRsvp = alias(rsvps, "my_rsvp");
+
+  const rows = await db
+    .select({
+      id: events.id,
+      title: events.title,
+      gameType: events.gameType,
+      location: events.location,
+      startsAt: events.startsAt,
+      capacity: events.capacity,
+      attendeeCount: count(rsvps.id),
+    })
+    .from(events)
+    .innerJoin(
+      myRsvp,
+      and(
+        eq(myRsvp.eventId, events.id),
+        eq(myRsvp.userPrincipal, userPrincipal),
+      ),
+    )
+    .leftJoin(rsvps, eq(rsvps.eventId, events.id))
+    .groupBy(events.id)
+    .orderBy(asc(events.startsAt));
+
+  return rows;
 }
 
 /** Distinct game types currently in use, for populating a filter control. */

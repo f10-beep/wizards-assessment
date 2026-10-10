@@ -92,6 +92,11 @@ rather than here.
   "ownership" (no login to check against) — same trust model as RSVPing
   itself. See [ADR 0005](./docs/decisions/0005-user-principal-identity.md)
   and `TODO.md` for the migration path to a real identity provider.
+- **"My events" includes past events, not just upcoming ones.** The story
+  says "everything I've RSVPed to," and unlike the browse list there's no
+  "upcoming" qualifier — soonest-first is just the sort order, not a
+  filter. Someone wanting a history of what they attended shouldn't have
+  it disappear the moment it starts.
 - **Capacity-safe RSVPs required switching Neon's driver** (see
   [ADR 0003](./docs/decisions/0003-neon-pooled-transactional-driver.md)):
   the originally-wired `neon-http` driver has no transaction support, so

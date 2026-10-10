@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
@@ -25,11 +26,19 @@ export function EventBrowser() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
-      <header className="mb-4">
-        <h1 className="text-xl font-bold text-slate-900">Game Night</h1>
-        <p className="text-sm text-slate-500">
-          Upcoming tabletop events near you.
-        </p>
+      <header className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-slate-900">Game Night</h1>
+          <p className="text-sm text-slate-500">
+            Upcoming tabletop events near you.
+          </p>
+        </div>
+        <Link
+          href="/my-events"
+          className="shrink-0 text-sm text-slate-500 underline hover:text-slate-700"
+        >
+          My events
+        </Link>
       </header>
 
       <div className="mb-4 flex flex-col gap-2 sm:flex-row">

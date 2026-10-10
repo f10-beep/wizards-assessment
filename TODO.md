@@ -38,6 +38,10 @@ than letting them pile up.
 
 ## Done
 
+- [x] P5: Player sees "My events" — everything they've RSVPed to (past and
+      upcoming), soonest first. Entered via a remembered-principal field
+      like the RSVP form, reusing the same `gameNight.userPrincipal`
+      storage key (`src/lib/userPrincipal.ts`)
 - [x] Reworked identity from a free-text `playerName` to an opaque
       `userPrincipal` (email-shaped, not validated as one) across the
       schema, API, and UI — a closer stand-in for what a real identity
