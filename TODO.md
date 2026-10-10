@@ -48,6 +48,28 @@ than letting them pile up.
 
 ## Done
 
+- [x] S4 validation: confirmed invalid input (bad capacity, past dates,
+      unknown IDs) is rejected server-side with clear errors. Capacity
+      bounds/types and `startsAt` format were already zod-enforced at
+      the router boundary and past-start-time was already checked in
+      `createEvent` (unit-tested in `createEvent.test.ts`); unknown IDs
+      already returned `NOT_FOUND` (business layer covered in
+      `listEvents.test.ts`/`rsvp.test.ts`/`attendees.test.ts`). Found and
+      fixed one real gap while probing this: a zod rejection's
+      `error.message` was the raw, JSON-stringified issue array (e.g.
+      posting capacity 1001 produced `[{"origin":"number",...}]` as the
+      message), not a clear error — and the UI (`CreateEventForm.tsx`)
+      renders that message verbatim for `BAD_REQUEST`, with no client-side
+      max on capacity to stop out-of-range values reaching the server in
+      the first place. Fixed once at the boundary rather than per form:
+      `src/server/trpc/init.ts` now has an `errorFormatter` that, for a
+      `BAD_REQUEST` whose cause is a `ZodError`, replaces the message with
+      the joined human-readable issue messages — covers every procedure's
+      input, not just `create`. Regression test in
+      `src/server/trpc/init.test.ts` exercises the real
+      `fetchRequestHandler` path (not `appRouter.createCaller`, which
+      skips `errorFormatter` entirely — caught this via a probe script
+      that gave a false "still broken" result before testing over HTTP).
 - [x] S3 validation: confirmed attendee counts shown in lists reflect
       reality. No code change needed — `attendeeCount` was already
       computed live from `rsvps` rows on every request (never a cached
