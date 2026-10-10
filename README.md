@@ -62,6 +62,9 @@ rather than here.
 - **Game types are free text, not a fixed enum.** The filter dropdown is
   populated from whatever distinct values organizers have actually used,
   so it never drifts from reality and doesn't need a maintained taxonomy.
+- **An event's detail page shows it regardless of whether it's already
+  started**, unlike the browse list's "upcoming" filter. A direct link to
+  an event shouldn't 404 just because it's in progress.
 - **Identity is deferred** until a story actually needs to attribute an
   action to a visitor (e.g. RSVP). `rsvps.playerName` is a plain string for
   now.

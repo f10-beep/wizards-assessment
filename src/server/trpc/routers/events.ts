@@ -1,6 +1,11 @@
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { db } from "../../db/index";
-import { listGameTypes, listUpcomingEvents } from "../../events/listEvents";
+import {
+  getEventById,
+  listGameTypes,
+  listUpcomingEvents,
+} from "../../events/listEvents";
 import { publicProcedure, router } from "../init";
 
 export const eventsRouter = router({
@@ -20,6 +25,19 @@ export const eventsRouter = router({
         ...event,
         startsAt: event.startsAt.toISOString(),
       }));
+    }),
+
+  byId: publicProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .query(async ({ input }) => {
+      const event = await getEventById(db, input.id);
+      if (!event) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Event not found",
+        });
+      }
+      return { ...event, startsAt: event.startsAt.toISOString() };
     }),
 
   gameTypes: publicProcedure.query(() => listGameTypes(db)),

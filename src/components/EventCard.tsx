@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
   weekday: "short",
   month: "short",
@@ -21,7 +23,10 @@ export function EventCard({ event }: { event: EventCardData }) {
   const isFull = spotsLeft <= 0;
 
   return (
-    <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <Link
+      href={`/events/${event.id}`}
+      className="block rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow"
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-base font-semibold leading-snug text-slate-900">
@@ -63,6 +68,6 @@ export function EventCard({ event }: { event: EventCardData }) {
           />
         </div>
       </div>
-    </article>
+    </Link>
   );
 }

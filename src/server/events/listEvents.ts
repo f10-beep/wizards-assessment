@@ -68,6 +68,34 @@ export async function listUpcomingEvents(
   return rows;
 }
 
+/**
+ * A single event by id, with its live attendee count — regardless of
+ * whether it has already started (a direct link to an event shouldn't
+ * 404 just because it's in progress, unlike the "upcoming" browse list).
+ * Returns undefined if no event with that id exists.
+ */
+export async function getEventById(
+  db: typeof Db,
+  id: number,
+): Promise<EventListItem | undefined> {
+  const rows = await db
+    .select({
+      id: events.id,
+      title: events.title,
+      gameType: events.gameType,
+      location: events.location,
+      startsAt: events.startsAt,
+      capacity: events.capacity,
+      attendeeCount: count(rsvps.id),
+    })
+    .from(events)
+    .leftJoin(rsvps, eq(rsvps.eventId, events.id))
+    .where(eq(events.id, id))
+    .groupBy(events.id);
+
+  return rows[0];
+}
+
 /** Distinct game types currently in use, for populating a filter control. */
 export async function listGameTypes(db: typeof Db): Promise<string[]> {
   const rows = await db

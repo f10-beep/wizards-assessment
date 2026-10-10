@@ -8,9 +8,9 @@ than letting them pile up.
 
 ## Next
 
-- [ ] P2+: RSVP / cancel flow (player), capacity-safe writes — the one
-      piece of logic that needs deliberate concurrency test coverage,
-      per ADR 0002 consequences
+- [ ] RSVP / cancel flow (player), capacity-safe writes — the one piece
+      of logic that needs deliberate concurrency test coverage, per
+      ADR 0002 consequences
 - [ ] Organizer story: post an event, see attendee list for own events
 - [ ] Identity ("who am I" picker) — only needed once RSVPs are
       attributable to a visitor; `rsvps.playerName` is a free string today
@@ -33,3 +33,4 @@ than letting them pile up.
 - [x] Scaffold Next.js/tRPC/Drizzle app
 - [x] P1: Player browses upcoming events — search/filter by game type
       or text, sorted soonest-first, with live attendee counts
+- [x] P2: Player opens an event to see its details and seats left

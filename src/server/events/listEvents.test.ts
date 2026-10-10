@@ -4,7 +4,7 @@ import { drizzle } from "drizzle-orm/pglite";
 import { migrate } from "drizzle-orm/pglite/migrator";
 import { PGlite } from "@electric-sql/pglite";
 import * as schema from "../db/schema";
-import { listGameTypes, listUpcomingEvents } from "./listEvents";
+import { getEventById, listGameTypes, listUpcomingEvents } from "./listEvents";
 
 const HOUR = 60 * 60 * 1000;
 const now = new Date("2026-06-01T12:00:00Z");
@@ -127,5 +127,61 @@ suite("listUpcomingEvents", () => {
       "Dungeons & Dragons",
       "Magic: The Gathering",
     ]);
+  });
+});
+
+suite("getEventById", () => {
+  let db: Awaited<ReturnType<typeof createTestDb>>;
+  let eventId: number;
+  let pastEventId: number;
+
+  before(async () => {
+    db = await createTestDb();
+
+    const [event] = await db
+      .insert(schema.events)
+      .values({
+        title: "Friday Night Magic",
+        gameType: "Magic: The Gathering",
+        location: "The Round Table Games",
+        startsAt: new Date(now.getTime() + 2 * HOUR),
+        capacity: 2,
+      })
+      .returning({ id: schema.events.id });
+    eventId = event!.id;
+
+    const [pastEvent] = await db
+      .insert(schema.events)
+      .values({
+        title: "Past Draft Night",
+        gameType: "Magic: The Gathering",
+        location: "Old Store",
+        startsAt: new Date(now.getTime() - HOUR),
+        capacity: 8,
+      })
+      .returning({ id: schema.events.id });
+    pastEventId = pastEvent!.id;
+
+    await db.insert(schema.rsvps).values([
+      { eventId, playerName: "Alex" },
+      { eventId, playerName: "Priya" }, // fills capacity 2
+    ]);
+  });
+
+  test("returns the event with its live attendee count", async () => {
+    const result = await getEventById(db, eventId);
+    assert.equal(result?.title, "Friday Night Magic");
+    assert.equal(result?.attendeeCount, 2);
+    assert.equal(result?.capacity, 2);
+  });
+
+  test("returns the event even if it has already started", async () => {
+    const result = await getEventById(db, pastEventId);
+    assert.equal(result?.title, "Past Draft Night");
+  });
+
+  test("returns undefined for a nonexistent id", async () => {
+    const result = await getEventById(db, 999_999);
+    assert.equal(result, undefined);
   });
 });
