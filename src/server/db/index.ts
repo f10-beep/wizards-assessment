@@ -1,19 +1,23 @@
 import { mkdirSync } from "node:fs";
-import { drizzle as drizzleNeon } from "drizzle-orm/neon-http";
+import { Pool } from "@neondatabase/serverless";
+import { drizzle as drizzleNeon } from "drizzle-orm/neon-serverless";
 import { drizzle as drizzlePglite } from "drizzle-orm/pglite";
 import { PGlite } from "@electric-sql/pglite";
 import * as schema from "./schema";
 
 /**
  * Local dev/test has no Postgres server or Docker available, so we run
- * against PGlite (real Postgres compiled to WASM, embedded in-process) and
- * only talk to Neon's HTTP driver when DATABASE_URL points at one. See
- * docs/decisions/0002-mvp-stack.md and README "Local development".
+ * against PGlite (real Postgres compiled to WASM, embedded in-process).
+ * Production talks to Neon through its pooled, session-based driver (not
+ * the stateless HTTP one) because RSVP writes need real transactions —
+ * see docs/decisions/0003-neon-pooled-transactional-driver.md. DATABASE_URL
+ * should be Neon's pooled connection string (see .env.example).
  */
 function createDb() {
   const url = process.env.DATABASE_URL;
   if (url) {
-    return { kind: "neon" as const, db: drizzleNeon(url, { schema }) };
+    const pool = new Pool({ connectionString: url });
+    return { kind: "neon" as const, db: drizzleNeon(pool, { schema }) };
   }
 
   const dataDir =

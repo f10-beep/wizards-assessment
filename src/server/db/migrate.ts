@@ -1,4 +1,4 @@
-import { migrate as migrateNeon } from "drizzle-orm/neon-http/migrator";
+import { migrate as migrateNeon } from "drizzle-orm/neon-serverless/migrator";
 import { migrate as migratePglite } from "drizzle-orm/pglite/migrator";
 import { dbResult } from "./index";
 

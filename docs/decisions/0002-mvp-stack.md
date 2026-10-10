@@ -1,6 +1,7 @@
 # 0002: MVP stack — Next.js on Vercel, Postgres, polling-first updates
 
-- **Status:** Accepted
+- **Status:** Accepted; the database-driver portion is superseded by
+  [0003](./0003-neon-pooled-transactional-driver.md)
 - **Date:** 2026-10-09
 
 ## Context
