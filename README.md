@@ -123,6 +123,18 @@ rather than here.
   it couldn't implement the race-safe capacity check ADR 0002 called for.
 - **TypeScript is pinned to 6.0.3, not the current 7.0.x line**, because
   `typescript-eslint` doesn't support TS 7's new API yet.
+- **Attendee counts tolerate modest staleness, not sub-second
+  accuracy.** Every count shown (browse list, event detail, attendee
+  roster) is computed live from the `rsvps` rows on each request —
+  there's no cached/denormalized counter that could drift from
+  reality. What's intentionally stale is a given browser tab between
+  polls: the browse list, an event's detail page, and "My events" each
+  refetch on a 30s interval ([ADR 0002](./docs/decisions/0002-mvp-stack.md)),
+  so a seat taken by someone else can take up to 30s to show up for a
+  viewer who already has the page open. Acceptable for a commute-time,
+  one-tap RSVP flow; the RSVP write path itself re-checks capacity
+  server-side regardless of what a client last polled, so staleness
+  never causes an overbook.
 
 ## Notes
 

@@ -25,8 +25,13 @@ than letting them pile up.
       per-request connection overhead matters — deferred, not built
       speculatively now, per ADR 0003 alternatives
 - [ ] Swap MVP polling for real push (managed realtime provider or
-      self-hosted WS + Redis pub/sub) once latency or load requires
-      it — see ADR 0002 consequences
+      self-hosted WS + Redis pub/sub). Trigger is concurrent-viewer
+      *load* (request volume scales with open tabs × poll frequency),
+      not staleness tolerance — the accepted 30s staleness window
+      (README "Assumptions where the brief was silent") doesn't by
+      itself justify push. Before reaching for push, lengthening the
+      poll interval is a cheaper lever that the staleness tolerance
+      already permits. See ADR 0002 consequences.
 - [ ] Revisit Postgres/Neon connection pooling and read replicas if
       load requires it — see ADR 0002 consequences
 - [ ] Revisit pinning TypeScript to 6.0.3 once `typescript-eslint`
@@ -43,6 +48,14 @@ than letting them pile up.
 
 ## Done
 
+- [x] S3 validation: confirmed attendee counts shown in lists reflect
+      reality. No code change needed — `attendeeCount` was already
+      computed live from `rsvps` rows on every request (never a cached
+      counter), and the browse list/event detail/"My events" pages
+      already poll every 30s (ADR 0002). Documented the accepted
+      staleness window explicitly in README's "Assumptions where the
+      brief was silent" rather than leaving it implicit in the polling
+      code.
 - [x] S1 validation: confirmed an event never exceeds capacity under
       concurrent RSVPs, enforced server-side. Proof is
       `src/server/events/rsvp.test.ts`'s "never overbooks under
