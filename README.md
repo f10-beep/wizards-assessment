@@ -32,19 +32,49 @@ Local dev and tests run against Postgres in Docker
 production-like infra (see `.env.example`).
 
 ```bash
-cp .env.example .env    # DATABASE_URL already points at the local container
-docker compose up -d    # starts Postgres (docker-compose.yml)
-npm install
-npm run db:generate      # only needed after changing src/server/db/schema.ts
-npm run db:migrate        # applies drizzle/*.sql to the local Postgres db
-npm run db:seed            # sample events + RSVPs for the browse UI to show
-npm run dev                 # http://localhost:3000
+cp .env.example .env && npm install && npm run setup
+npm run dev    # http://localhost:3000
 ```
+
+`npm run setup` starts Postgres in Docker, waits for it to be healthy,
+applies migrations, and seeds sample events/RSVPs so the browse UI has
+something to show. It's `db:up && db:migrate && db:seed` under the hood —
+run those individually if you need to re-seed or re-migrate without
+restarting the container. `npm run db:generate` is separate and only
+needed after changing `src/server/db/schema.ts`.
 
 Other scripts: `npm test` (unit/integration tests against the same Docker
 Postgres, each test file isolated in its own schema), `npm run typecheck`,
 `npm run lint`, `npm run build`. `docker compose down` stops the database;
 add `-v` to also drop its data volume.
+
+## Time spent
+
+Roughly 8-10 hours, across several sessions (one story per session — see
+commit history):
+
+- Stack scaffolding + ground rules (`AGENTS.md`, ADR 0002)
+- Player stories (browse/filter, detail, RSVP, cancel, "my events") —
+  bulk of the time, including the Neon driver swap (ADR 0003)
+- Organizer stories (post event, attendee roster) + role modeling
+  (ADR 0005/0006)
+- System-constraint validation (S1-S4): concurrency tests, input
+  hardening
+- Local infra (Docker Postgres, test-schema isolation fix)
+
+## Before real traffic
+
+What's stubbed/simplified, and what I'd harden first:
+
+- **Auth**: `StubAuthBar` self-asserted identity/role, no real sessions
+  — see `TODO.md`/ADR 0005/0006 for the migration path
+- **Deployment**: not deployed; verified locally only. Target is
+  Vercel + Neon (ADR 0002)
+- **Persistence**: single local Postgres container, no backups
+- **Observability**: `console.error` only, no logging/metrics/alerting
+- **Abuse protection**: no rate limiting on any mutation
+- **Scale**: MVP-sized (polling, live `COUNT`) — see "Scale: 12-month
+  path" below for the levers
 
 ## Project layout
 
