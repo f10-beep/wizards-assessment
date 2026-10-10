@@ -1,15 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
-
-// Opaque identity key for the MVP (no real auth yet) — see
-// docs/decisions/0005-user-principal-identity.md. Everything above this
-// layer treats it as a read-only identifier (email-shaped, but not
-// validated as one), never parsed, split, or displayed as if it were a
-// display name.
-const USER_PRINCIPAL_STORAGE_KEY = "gameNight.userPrincipal";
+import { setStoredUserPrincipal, useStoredUserPrincipal } from "@/lib/userPrincipal";
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
   weekday: "long",
@@ -126,13 +119,7 @@ function EventDetailsCard({ event }: { event: EventDetailData }) {
 
 function RsvpForm({ eventId, isFull }: { eventId: number; isFull: boolean }) {
   const utils = trpc.useUtils();
-  // Lazy initializer (not an effect) so the remembered principal is in
-  // place for the very first render, not a frame after.
-  const [userPrincipal, setUserPrincipal] = useState(() =>
-    typeof window === "undefined"
-      ? ""
-      : window.localStorage.getItem(USER_PRINCIPAL_STORAGE_KEY) ?? "",
-  );
+  const userPrincipal = useStoredUserPrincipal();
   const trimmedPrincipal = userPrincipal.trim();
 
   // Whether this remembered principal already has an RSVP here — read
@@ -153,13 +140,7 @@ function RsvpForm({ eventId, isFull }: { eventId: number; isFull: boolean }) {
   }
 
   const rsvpMutation = trpc.events.rsvp.useMutation({
-    onSuccess: (_data, variables) => {
-      window.localStorage.setItem(
-        USER_PRINCIPAL_STORAGE_KEY,
-        variables.userPrincipal,
-      );
-      invalidateEventState();
-    },
+    onSuccess: invalidateEventState,
   });
 
   const cancelMutation = trpc.events.cancelRsvp.useMutation({
@@ -214,7 +195,7 @@ function RsvpForm({ eventId, isFull }: { eventId: number; isFull: boolean }) {
         required
         placeholder="you@example.com"
         value={userPrincipal}
-        onChange={(event) => setUserPrincipal(event.target.value)}
+        onChange={(event) => setStoredUserPrincipal(event.target.value)}
         className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none"
       />
       <button

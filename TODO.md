@@ -38,6 +38,20 @@ than letting them pile up.
 
 ## Done
 
+- [x] Fixed two real bugs found smoke-testing "My events": (1) its input
+      wrote straight into query input on every keystroke with no
+      debounce (unlike the browse page's search box), firing a request
+      per character; (2) a `useState` lazy initializer read
+      `localStorage` directly, which returns `""` during SSR but the
+      real stored value on the client's first (hydration) render —
+      disagreeing with the server whenever a principal was already
+      remembered, a hydration-mismatch error for any component
+      branching rendered text on it. Fixed by moving the stored
+      principal into `useSyncExternalStore` (React's mechanism for
+      exactly this: an external store needing a different value during
+      SSR vs. after hydration) in `src/lib/userPrincipal.ts`, shared by
+      both `MyEvents.tsx` and `EventDetails.tsx`'s RSVP form (which had
+      the same latent bug, just silent there).
 - [x] P5: Player sees "My events" — everything they've RSVPed to (past and
       upcoming), soonest first. Entered via a remembered-principal field
       like the RSVP form, reusing the same `gameNight.userPrincipal`

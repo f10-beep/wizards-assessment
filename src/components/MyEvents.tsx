@@ -1,12 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
-import {
-  getStoredUserPrincipal,
-  USER_PRINCIPAL_STORAGE_KEY,
-} from "@/lib/userPrincipal";
+import { setStoredUserPrincipal, useStoredUserPrincipal } from "@/lib/userPrincipal";
+import { useDebouncedValue } from "@/lib/useDebouncedValue";
 import { EventCard } from "./EventCard";
 
 // Refetch periodically so attendee counts stay close to current while
@@ -14,8 +11,8 @@ import { EventCard } from "./EventCard";
 const POLL_INTERVAL_MS = 30_000;
 
 export function MyEvents() {
-  const [userPrincipal, setUserPrincipal] = useState(getStoredUserPrincipal);
-  const trimmedPrincipal = userPrincipal.trim();
+  const userPrincipal = useStoredUserPrincipal();
+  const trimmedPrincipal = useDebouncedValue(userPrincipal.trim(), 300);
 
   const myEventsQuery = trpc.events.myEvents.useQuery(
     { userPrincipal: trimmedPrincipal },
@@ -42,11 +39,7 @@ export function MyEvents() {
         type="text"
         placeholder="you@example.com"
         value={userPrincipal}
-        onChange={(event) => {
-          const principal = event.target.value;
-          setUserPrincipal(principal);
-          window.localStorage.setItem(USER_PRINCIPAL_STORAGE_KEY, principal);
-        }}
+        onChange={(event) => setStoredUserPrincipal(event.target.value)}
         className="mb-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none sm:max-w-xs"
       />
 
