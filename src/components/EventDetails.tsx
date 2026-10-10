@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
-import { setStoredUserPrincipal, useStoredUserPrincipal } from "@/lib/userPrincipal";
+import { useStoredUserPrincipal } from "@/lib/userPrincipal";
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
   weekday: "long",
@@ -147,6 +147,12 @@ function RsvpForm({ eventId, isFull }: { eventId: number; isFull: boolean }) {
     onSuccess: invalidateEventState,
   });
 
+  if (trimmedPrincipal.length === 0) {
+    return (
+      <p className="mt-4 text-sm text-slate-500">You&apos;re not signed in.</p>
+    );
+  }
+
   if (myRsvpQuery.data?.rsvped) {
     return (
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
@@ -181,29 +187,16 @@ function RsvpForm({ eventId, isFull }: { eventId: number; isFull: boolean }) {
   }
 
   return (
-    <form
-      onSubmit={(formEvent) => {
-        formEvent.preventDefault();
-        const principal = userPrincipal.trim();
-        if (!principal) return;
-        rsvpMutation.mutate({ eventId, userPrincipal: principal });
-      }}
-      className="mt-4 flex flex-col gap-2 sm:flex-row"
-    >
-      <input
-        type="text"
-        required
-        placeholder="you@example.com"
-        value={userPrincipal}
-        onChange={(event) => setStoredUserPrincipal(event.target.value)}
-        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none"
-      />
+    <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
       <button
-        type="submit"
-        disabled={rsvpMutation.isPending || !userPrincipal.trim()}
+        type="button"
+        onClick={() =>
+          rsvpMutation.mutate({ eventId, userPrincipal: trimmedPrincipal })
+        }
+        disabled={rsvpMutation.isPending}
         className="shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
       >
-        {rsvpMutation.isPending ? "RSVPing…" : "RSVP"}
+        {rsvpMutation.isPending ? "RSVPing…" : `RSVP as ${trimmedPrincipal}`}
       </button>
       {rsvpMutation.error && (
         <p className="text-sm text-rose-600 sm:basis-full">
@@ -212,6 +205,6 @@ function RsvpForm({ eventId, isFull }: { eventId: number; isFull: boolean }) {
             : "Couldn't RSVP. Try again."}
         </p>
       )}
-    </form>
+    </div>
   );
 }

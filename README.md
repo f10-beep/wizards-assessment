@@ -92,6 +92,19 @@ rather than here.
   "ownership" (no login to check against) — same trust model as RSVPing
   itself. See [ADR 0005](./docs/decisions/0005-user-principal-identity.md)
   and `TODO.md` for the migration path to a real identity provider.
+- **The organizer role is a claimed-and-checked boolean, not an accounts
+  system.** The brief says identity can stay a simple "who am I" picker
+  but the API must still be clear about which role may do what — so
+  posting an event requires explicitly claiming the organizer role (an
+  `isOrganizer` checkbox in the same `StubAuthBar` that holds the
+  principal, off by default), checked server-side via `requireOrganizer`
+  and rejected with `FORBIDDEN` if missing. It's unverified today, same
+  as the principal itself, but modeled and enforced the same shape a
+  real session/IdP claim would be later — not just implied by endpoint
+  naming. `events.organizerPrincipal` is a separate, complementary
+  concern (ownership of a specific event, for a planned attendee-list
+  story to scope by), not a stand-in for the role check. See
+  [ADR 0006](./docs/decisions/0006-organizer-role-claim.md).
 - **"My events" includes past events, not just upcoming ones.** The story
   says "everything I've RSVPed to," and unlike the browse list there's no
   "upcoming" qualifier — soonest-first is just the sort order, not a

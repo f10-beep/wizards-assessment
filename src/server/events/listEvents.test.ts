@@ -28,6 +28,7 @@ suite("listUpcomingEvents", () => {
           location: "Old Store",
           startsAt: new Date(now.getTime() - HOUR),
           capacity: 8,
+          organizerPrincipal: "organizer@example.com",
         },
         {
           title: "Friday Night Magic",
@@ -35,6 +36,7 @@ suite("listUpcomingEvents", () => {
           location: "The Round Table Games",
           startsAt: new Date(now.getTime() + 2 * HOUR),
           capacity: 4,
+          organizerPrincipal: "organizer@example.com",
         },
         {
           title: "Beginner D&D One-Shot",
@@ -42,6 +44,7 @@ suite("listUpcomingEvents", () => {
           location: "Spellbound Hobbies",
           startsAt: new Date(now.getTime() + HOUR),
           capacity: 6,
+          organizerPrincipal: "organizer@example.com",
         },
         {
           title: "Catan Night",
@@ -49,6 +52,7 @@ suite("listUpcomingEvents", () => {
           location: "Board & Brew Café",
           startsAt: new Date(now.getTime() + 3 * HOUR),
           capacity: 2,
+          organizerPrincipal: "organizer@example.com",
         },
       ])
       .returning({ id: schema.events.id, title: schema.events.title });
@@ -145,6 +149,7 @@ suite("listMyEvents", () => {
           location: "Old Store",
           startsAt: new Date(now.getTime() - HOUR),
           capacity: 8,
+          organizerPrincipal: "organizer@example.com",
         },
         {
           title: "Friday Night Magic",
@@ -152,6 +157,7 @@ suite("listMyEvents", () => {
           location: "The Round Table Games",
           startsAt: new Date(now.getTime() + 2 * HOUR),
           capacity: 4,
+          organizerPrincipal: "organizer@example.com",
         },
         {
           title: "Beginner D&D One-Shot",
@@ -159,6 +165,7 @@ suite("listMyEvents", () => {
           location: "Spellbound Hobbies",
           startsAt: new Date(now.getTime() + HOUR),
           capacity: 6,
+          organizerPrincipal: "organizer@example.com",
         },
         {
           title: "Catan Night",
@@ -166,6 +173,7 @@ suite("listMyEvents", () => {
           location: "Board & Brew Café",
           startsAt: new Date(now.getTime() + 3 * HOUR),
           capacity: 2,
+          organizerPrincipal: "organizer@example.com",
         },
       ])
       .returning({ id: schema.events.id, title: schema.events.title });
@@ -233,6 +241,7 @@ suite("getEventById", () => {
         location: "The Round Table Games",
         startsAt: new Date(now.getTime() + 2 * HOUR),
         capacity: 2,
+        organizerPrincipal: "organizer@example.com",
       })
       .returning({ id: schema.events.id });
     eventId = event!.id;
@@ -245,6 +254,7 @@ suite("getEventById", () => {
         location: "Old Store",
         startsAt: new Date(now.getTime() - HOUR),
         capacity: 8,
+        organizerPrincipal: "organizer@example.com",
       })
       .returning({ id: schema.events.id });
     pastEventId = pastEvent!.id;

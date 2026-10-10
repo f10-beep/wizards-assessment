@@ -7,6 +7,14 @@ export const events = pgTable("events", {
   location: text("location").notNull(),
   startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
   capacity: integer("capacity").notNull(),
+  // Who posted this event, in the same opaque-principal shape as
+  // rsvps.userPrincipal — see docs/decisions/0005-user-principal-identity.md
+  // and docs/decisions/0006-organizer-role-claim.md. Ownership, not the
+  // organizer role check itself (that's requireOrganizer in
+  // src/server/auth/roles.ts) — "may manage this event" is "is this
+  // principal," separate from "may this actor act as an organizer at
+  // all."
+  organizerPrincipal: text("organizer_principal").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

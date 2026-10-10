@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
-import { setStoredUserPrincipal, useStoredUserPrincipal } from "@/lib/userPrincipal";
+import { useStoredUserPrincipal } from "@/lib/userPrincipal";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
 import { EventCard } from "./EventCard";
 
@@ -35,18 +35,8 @@ export function MyEvents() {
         </p>
       </header>
 
-      <input
-        type="text"
-        placeholder="you@example.com"
-        value={userPrincipal}
-        onChange={(event) => setStoredUserPrincipal(event.target.value)}
-        className="mb-4 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none sm:max-w-xs"
-      />
-
       {trimmedPrincipal.length === 0 && (
-        <p className="text-sm text-slate-500">
-          Enter your user principal to see the events you&apos;ve RSVPed to.
-        </p>
+        <p className="text-sm text-slate-500">You&apos;re not signed in.</p>
       )}
 
       {myEventsQuery.isLoading && (

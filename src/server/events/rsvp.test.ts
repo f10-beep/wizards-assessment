@@ -24,6 +24,7 @@ suite("rsvpToEvent", () => {
         location: "The Round Table Games",
         startsAt: new Date(now.getTime() + HOUR),
         capacity: 5,
+        organizerPrincipal: "organizer@example.com",
       })
       .returning({ id: schema.events.id });
     openEventId = openEvent!.id;
@@ -36,6 +37,7 @@ suite("rsvpToEvent", () => {
         location: "Board & Brew Café",
         startsAt: new Date(now.getTime() + HOUR),
         capacity: 1,
+        organizerPrincipal: "organizer@example.com",
       })
       .returning({ id: schema.events.id });
     fullEventId = fullEvent!.id;
@@ -77,6 +79,7 @@ suite("rsvpToEvent", () => {
         location: "The Round Table Games",
         startsAt: new Date(now.getTime() + HOUR),
         capacity: 1,
+        organizerPrincipal: "organizer@example.com",
       })
       .returning({ id: schema.events.id });
     const raceEventId = raceEvent!.id;
@@ -109,6 +112,7 @@ suite("cancelRsvp", () => {
         location: "The Round Table Games",
         startsAt: new Date(now.getTime() + HOUR),
         capacity: 1,
+        organizerPrincipal: "organizer@example.com",
       })
       .returning({ id: schema.events.id });
     eventId = event!.id;
@@ -153,6 +157,7 @@ suite("hasRsvped", () => {
         location: "Board & Brew Café",
         startsAt: new Date(now.getTime() + HOUR),
         capacity: 4,
+        organizerPrincipal: "organizer@example.com",
       })
       .returning({ id: schema.events.id });
     eventId = event!.id;

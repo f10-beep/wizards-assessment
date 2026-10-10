@@ -8,18 +8,25 @@ than letting them pile up.
 
 ## Next
 
-- [ ] Organizer story: post an event, see attendee list for own events
-- [ ] Real identity provider (if/when required — likely once an organizer
-      story needs real attendee management, not just an MVP demo):
-      replace the manually-typed `userPrincipal` field with a session
-      established by actual login, and have the RSVP mutation read the
-      principal from that session instead of trusting client input. See
-      ADR 0005 — `rsvps.userPrincipal` and the uniqueness constraint on
-      `(eventId, userPrincipal)` are already shaped for this and
-      shouldn't need to change, only how the value gets populated. The
-      capacity-safe transaction in `src/server/events/rsvp.ts`
-      (`SELECT ... FOR UPDATE` + re-read count) is identity-agnostic and
-      doesn't need to change either.
+- [ ] O2: organizer sees the attendee list for their own events, gated
+      by `requireOrganizer` *and* the first place
+      `events.organizerPrincipal` (ADR 0006) needs to be enforced as
+      ownership, not just recorded: the query must filter by
+      `organizerPrincipal = <caller>` so one organizer can't read
+      another's roster (plausibly real contact info, since
+      `userPrincipal` is email-shaped).
+- [ ] Real identity provider (if/when required — likely once O2 needs
+      real access control, not just an MVP demo): replace the
+      manually-typed `userPrincipal`/`organizerPrincipal`/`isOrganizer`
+      fields with a session established by actual login, and have
+      mutations/queries build their `Actor` (`src/server/auth/roles.ts`)
+      from that session instead of trusting client input. See ADR 0005
+      and 0006 — the uniqueness constraint on `(eventId,
+      userPrincipal)`, the `organizerPrincipal` ownership column,
+      `requireOrganizer`'s call sites, and the capacity-safe transaction
+      in `src/server/events/rsvp.ts` (`SELECT ... FOR UPDATE` + re-read
+      count) are all identity-agnostic and shouldn't need to change,
+      only how the principal/role values get populated.
 - [ ] Reintroduce `drizzle-orm/neon-http` for the read-only
       browse/detail queries if metrics ever show the pooled driver's
       per-request connection overhead matters — deferred, not built
@@ -38,6 +45,11 @@ than letting them pile up.
 
 ## Done
 
+- [x] O1: organizer posts an event (title, game type, date/time,
+      location, capacity). Gated by an explicit, checked organizer-role
+      claim (`requireOrganizer`); ownership recorded via
+      `organizerPrincipal`, checked the same way as `userPrincipal` —
+      see ADR 0006.
 - [x] Fixed per-test-suite Postgres-schema isolation (ADR 0004): the
       generated FK on `rsvps.event_id` was schema-qualified to
       `"public"."events"`, so every test schema's RSVP inserts actually

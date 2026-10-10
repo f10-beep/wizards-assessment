@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useStoredIsOrganizer } from "@/lib/roles";
 import { trpc } from "@/lib/trpc/client";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
 import { EventCard } from "./EventCard";
@@ -14,6 +15,7 @@ export function EventBrowser() {
   const [search, setSearch] = useState("");
   const [gameType, setGameType] = useState("");
   const debouncedSearch = useDebouncedValue(search, 300);
+  const isOrganizer = useStoredIsOrganizer();
 
   const gameTypesQuery = trpc.events.gameTypes.useQuery();
   const eventsQuery = trpc.events.list.useQuery(
@@ -33,12 +35,22 @@ export function EventBrowser() {
             Upcoming tabletop events near you.
           </p>
         </div>
-        <Link
-          href="/my-events"
-          className="shrink-0 text-sm text-slate-500 underline hover:text-slate-700"
-        >
-          My events
-        </Link>
+        <div className="flex shrink-0 gap-3 text-sm">
+          <Link
+            href="/my-events"
+            className="text-slate-500 underline hover:text-slate-700"
+          >
+            My events
+          </Link>
+          {isOrganizer && (
+            <Link
+              href="/events/new"
+              className="text-slate-500 underline hover:text-slate-700"
+            >
+              Post an event
+            </Link>
+          )}
+        </div>
       </header>
 
       <div className="mb-4 flex flex-col gap-2 sm:flex-row">

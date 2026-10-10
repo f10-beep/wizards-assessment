@@ -1,6 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { requireOrganizer } from "../../auth/roles";
 import { db } from "../../db/index";
+import { createEvent } from "../../events/createEvent";
 import {
   getEventById,
   listGameTypes,
@@ -43,6 +45,48 @@ export const eventsRouter = router({
     }),
 
   gameTypes: publicProcedure.query(() => listGameTypes(db)),
+
+  // Organizer-facing: posts a new event owned by organizerPrincipal.
+  // Gated by the organizer role claim (see
+  // docs/decisions/0006-organizer-role-claim.md) — isOrganizer is
+  // client-claimed today (no accounts yet), but requireOrganizer is the
+  // same check a verified session would go through later.
+  create: publicProcedure
+    .input(
+      z.object({
+        title: z.string().trim().min(1).max(200),
+        gameType: z.string().trim().min(1).max(100),
+        location: z.string().trim().min(1).max(200),
+        startsAt: z.iso.datetime(),
+        capacity: z.number().int().positive().max(1000),
+        organizerPrincipal: z.string().trim().min(1).max(100),
+        isOrganizer: z.boolean(),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      requireOrganizer({
+        principal: input.organizerPrincipal,
+        isOrganizer: input.isOrganizer,
+      });
+
+      const result = await createEvent(db, {
+        title: input.title,
+        gameType: input.gameType,
+        location: input.location,
+        capacity: input.capacity,
+        organizerPrincipal: input.organizerPrincipal,
+        startsAt: new Date(input.startsAt),
+      });
+
+      if (result.status === "starts_in_past") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Event start time must be in the future.",
+        });
+      }
+
+      return { status: "created" as const, id: result.id };
+    }),
 
   myEvents: publicProcedure
     .input(z.object({ userPrincipal: z.string().trim().min(1).max(100) }))

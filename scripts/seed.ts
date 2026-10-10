@@ -12,6 +12,7 @@ const sampleEvents = [
     location: "The Round Table Games, 123 Main St",
     startsAt: hoursFromNow(-48), // in the past — should never show up as "upcoming"
     capacity: 8,
+    organizerPrincipal: "store@roundtablegames.example.com",
     attendees: ["alex@example.com", "priya@example.com"],
   },
   {
@@ -20,6 +21,7 @@ const sampleEvents = [
     location: "The Round Table Games, 123 Main St",
     startsAt: hoursFromNow(24),
     capacity: 10,
+    organizerPrincipal: "store@roundtablegames.example.com",
     attendees: ["sam@example.com", "jordan@example.com", "casey@example.com"],
   },
   {
@@ -28,6 +30,7 @@ const sampleEvents = [
     location: "The Round Table Games, 123 Main St",
     startsAt: hoursFromNow(48),
     capacity: 8,
+    organizerPrincipal: "store@roundtablegames.example.com",
     attendees: [
       "alex@example.com",
       "morgan@example.com",
@@ -42,6 +45,7 @@ const sampleEvents = [
     location: "The Round Table Games, 123 Main St",
     startsAt: hoursFromNow(60),
     capacity: 4,
+    organizerPrincipal: "store@roundtablegames.example.com",
     attendees: ["sam@example.com", "jordan@example.com", "casey@example.com"], // capacity - 1, for testing the avail-to-full transition
   },
   {
@@ -50,6 +54,7 @@ const sampleEvents = [
     location: "Spellbound Hobbies, 45 Oak Ave",
     startsAt: hoursFromNow(72),
     capacity: 6,
+    organizerPrincipal: "host@spellboundhobbies.example.com",
     attendees: ["jordan@example.com", "casey@example.com"],
   },
   {
@@ -58,6 +63,7 @@ const sampleEvents = [
     location: "Battle Bunker, 900 Industrial Way",
     startsAt: hoursFromNow(96),
     capacity: 4,
+    organizerPrincipal: "events@battlebunker.example.com",
     attendees: [
       "sam@example.com",
       "alex@example.com",
@@ -71,6 +77,7 @@ const sampleEvents = [
     location: "Board & Brew Café, 12 Elm St",
     startsAt: hoursFromNow(120),
     capacity: 12,
+    organizerPrincipal: "events@boardandbrew.example.com",
     attendees: [
       "taylor@example.com",
       "priya@example.com",
@@ -84,6 +91,7 @@ const sampleEvents = [
     location: "Board & Brew Café, 12 Elm St",
     startsAt: hoursFromNow(168),
     capacity: 10,
+    organizerPrincipal: "events@boardandbrew.example.com",
     attendees: [],
   },
 ] as const;
@@ -101,6 +109,7 @@ async function main() {
         location: sample.location,
         startsAt: sample.startsAt,
         capacity: sample.capacity,
+        organizerPrincipal: sample.organizerPrincipal,
       })
       .returning();
     const inserted = insertedRows[0];

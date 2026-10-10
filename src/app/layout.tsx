@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { StubAuthBar } from "@/components/StubAuthBar";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
@@ -15,7 +16,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="min-h-screen text-slate-900">
-        <Providers>{children}</Providers>
+        <Providers>
+          <StubAuthBar />
+          {children}
+        </Providers>
       </body>
     </html>
   );

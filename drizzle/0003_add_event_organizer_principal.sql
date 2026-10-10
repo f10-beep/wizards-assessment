@@ -1,0 +1,1 @@
+ALTER TABLE "events" ADD COLUMN "organizer_principal" text NOT NULL;
