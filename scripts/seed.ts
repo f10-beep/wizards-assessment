@@ -12,7 +12,7 @@ const sampleEvents = [
     location: "The Round Table Games, 123 Main St",
     startsAt: hoursFromNow(-48), // in the past — should never show up as "upcoming"
     capacity: 8,
-    attendees: ["Alex", "Priya"],
+    attendees: ["alex@example.com", "priya@example.com"],
   },
   {
     title: "Pokémon TCG League Night",
@@ -20,7 +20,7 @@ const sampleEvents = [
     location: "The Round Table Games, 123 Main St",
     startsAt: hoursFromNow(24),
     capacity: 10,
-    attendees: ["Sam", "Jordan", "Casey"],
+    attendees: ["sam@example.com", "jordan@example.com", "casey@example.com"],
   },
   {
     title: "Friday Night Magic: Draft",
@@ -28,7 +28,21 @@ const sampleEvents = [
     location: "The Round Table Games, 123 Main St",
     startsAt: hoursFromNow(48),
     capacity: 8,
-    attendees: ["Alex", "Morgan", "Riley", "Taylor", "Priya"],
+    attendees: [
+      "alex@example.com",
+      "morgan@example.com",
+      "riley@example.com",
+      "taylor@example.com",
+      "priya@example.com",
+    ],
+  },
+  {
+    title: "One Seat Left: Commander Pod",
+    gameType: "Magic: The Gathering",
+    location: "The Round Table Games, 123 Main St",
+    startsAt: hoursFromNow(60),
+    capacity: 4,
+    attendees: ["sam@example.com", "jordan@example.com", "casey@example.com"], // capacity - 1, for testing the avail-to-full transition
   },
   {
     title: "Beginner D&D One-Shot",
@@ -36,7 +50,7 @@ const sampleEvents = [
     location: "Spellbound Hobbies, 45 Oak Ave",
     startsAt: hoursFromNow(72),
     capacity: 6,
-    attendees: ["Jordan", "Casey"],
+    attendees: ["jordan@example.com", "casey@example.com"],
   },
   {
     title: "Warhammer 40k Open Play",
@@ -44,7 +58,12 @@ const sampleEvents = [
     location: "Battle Bunker, 900 Industrial Way",
     startsAt: hoursFromNow(96),
     capacity: 4,
-    attendees: ["Sam", "Alex", "Riley", "Morgan"], // full
+    attendees: [
+      "sam@example.com",
+      "alex@example.com",
+      "riley@example.com",
+      "morgan@example.com",
+    ], // full
   },
   {
     title: "Catan Tournament",
@@ -52,7 +71,12 @@ const sampleEvents = [
     location: "Board & Brew Café, 12 Elm St",
     startsAt: hoursFromNow(120),
     capacity: 12,
-    attendees: ["Taylor", "Priya", "Casey", "Jordan"],
+    attendees: [
+      "taylor@example.com",
+      "priya@example.com",
+      "casey@example.com",
+      "jordan@example.com",
+    ],
   },
   {
     title: "Settlers & Strategy Meetup",
