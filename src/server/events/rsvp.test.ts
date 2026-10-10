@@ -42,7 +42,7 @@ suite("rsvpToEvent", () => {
 
     await db
       .insert(schema.rsvps)
-      .values({ eventId: fullEventId, playerName: "Sam" });
+      .values({ eventId: fullEventId, userPrincipal: "Sam" });
   });
 
   after(() => cleanup());
@@ -52,7 +52,7 @@ suite("rsvpToEvent", () => {
     assert.deepEqual(result, { status: "confirmed" });
   });
 
-  test("rejects a duplicate RSVP from the same player", async () => {
+  test("rejects a duplicate RSVP from the same principal", async () => {
     await rsvpToEvent(db, openEventId, "Priya");
     const result = await rsvpToEvent(db, openEventId, "Priya");
     assert.deepEqual(result, { status: "already_rsvped" });
@@ -115,7 +115,7 @@ suite("cancelRsvp", () => {
 
     await db
       .insert(schema.rsvps)
-      .values({ eventId, playerName: "Sam" });
+      .values({ eventId, userPrincipal: "Sam" });
   });
 
   after(() => cleanup());
@@ -131,7 +131,7 @@ suite("cancelRsvp", () => {
     assert.deepEqual(rsvpResult, { status: "confirmed" });
   });
 
-  test("reports not_found for a player with no RSVP", async () => {
+  test("reports not_found for a principal with no RSVP", async () => {
     const result = await cancelRsvp(db, eventId, "Nobody");
     assert.deepEqual(result, { status: "not_found" });
   });
@@ -159,16 +159,16 @@ suite("hasRsvped", () => {
 
     await db
       .insert(schema.rsvps)
-      .values({ eventId, playerName: "Jordan" });
+      .values({ eventId, userPrincipal: "Jordan" });
   });
 
   after(() => cleanup());
 
-  test("is true for a player who has RSVPed", async () => {
+  test("is true for a principal who has RSVPed", async () => {
     assert.equal(await hasRsvped(db, eventId, "Jordan"), true);
   });
 
-  test("is false for a player who hasn't RSVPed", async () => {
+  test("is false for a principal who hasn't RSVPed", async () => {
     assert.equal(await hasRsvped(db, eventId, "Alex"), false);
   });
 });

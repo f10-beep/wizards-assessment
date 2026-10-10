@@ -84,9 +84,9 @@ async function main() {
 
     if (sample.attendees.length > 0) {
       await db.insert(rsvps).values(
-        sample.attendees.map((playerName) => ({
+        sample.attendees.map((userPrincipal) => ({
           eventId: inserted.id,
-          playerName,
+          userPrincipal,
         })),
       );
     }

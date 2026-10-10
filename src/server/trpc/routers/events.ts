@@ -47,11 +47,11 @@ export const eventsRouter = router({
     .input(
       z.object({
         eventId: z.number().int().positive(),
-        playerName: z.string().trim().min(1).max(100),
+        userPrincipal: z.string().trim().min(1).max(100),
       }),
     )
     .mutation(async ({ input }) => {
-      const result = await rsvpToEvent(db, input.eventId, input.playerName);
+      const result = await rsvpToEvent(db, input.eventId, input.userPrincipal);
 
       if (result.status === "event_not_found") {
         throw new TRPCError({
@@ -79,11 +79,11 @@ export const eventsRouter = router({
     .input(
       z.object({
         eventId: z.number().int().positive(),
-        playerName: z.string().trim().min(1).max(100),
+        userPrincipal: z.string().trim().min(1).max(100),
       }),
     )
     .query(async ({ input }) => {
-      const rsvped = await hasRsvped(db, input.eventId, input.playerName);
+      const rsvped = await hasRsvped(db, input.eventId, input.userPrincipal);
       return { rsvped };
     }),
 
@@ -91,11 +91,11 @@ export const eventsRouter = router({
     .input(
       z.object({
         eventId: z.number().int().positive(),
-        playerName: z.string().trim().min(1).max(100),
+        userPrincipal: z.string().trim().min(1).max(100),
       }),
     )
     .mutation(async ({ input }) => {
-      const result = await cancelRsvp(db, input.eventId, input.playerName);
+      const result = await cancelRsvp(db, input.eventId, input.userPrincipal);
 
       if (result.status === "not_found") {
         throw new TRPCError({

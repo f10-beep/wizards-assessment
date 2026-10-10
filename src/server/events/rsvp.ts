@@ -35,14 +35,14 @@ function isUniqueViolation(error: unknown): boolean {
  * re-reading the attendee count, so the capacity check sees a guaranteed-
  * current count instead of racing a concurrent RSVP to the same event —
  * see docs/decisions/0003-neon-pooled-transactional-driver.md. The
- * player-name uniqueness check rides on the rsvps unique constraint
- * rather than a separate pre-check, since the constraint is already the
+ * principal uniqueness check rides on the rsvps unique constraint rather
+ * than a separate pre-check, since the constraint is already the
  * authoritative source and a duplicate attempt is rare.
  */
 export async function rsvpToEvent(
   db: typeof Db,
   eventId: number,
-  playerName: string,
+  userPrincipal: string,
 ): Promise<RsvpResult> {
   try {
     return await db.transaction(async (tx) => {
@@ -67,7 +67,7 @@ export async function rsvpToEvent(
         return { status: "event_full" } as const;
       }
 
-      await tx.insert(rsvps).values({ eventId, playerName });
+      await tx.insert(rsvps).values({ eventId, userPrincipal });
       return { status: "confirmed" } as const;
     });
   } catch (error) {
@@ -79,33 +79,37 @@ export async function rsvpToEvent(
 }
 
 /**
- * Cancels a player's RSVP, freeing their seat. No locking needed here
+ * Cancels a principal's RSVP, freeing their seat. No locking needed here
  * (unlike rsvpToEvent): a delete can never cause overbooking, so there's
  * nothing to race against capacity-wise.
  */
 export async function cancelRsvp(
   db: typeof Db,
   eventId: number,
-  playerName: string,
+  userPrincipal: string,
 ): Promise<CancelRsvpResult> {
   const deleted = await db
     .delete(rsvps)
-    .where(and(eq(rsvps.eventId, eventId), eq(rsvps.playerName, playerName)))
+    .where(
+      and(eq(rsvps.eventId, eventId), eq(rsvps.userPrincipal, userPrincipal)),
+    )
     .returning();
 
   return deleted.length > 0 ? { status: "cancelled" } : { status: "not_found" };
 }
 
-/** Whether a player already has an RSVP for an event. */
+/** Whether a principal already has an RSVP for an event. */
 export async function hasRsvped(
   db: typeof Db,
   eventId: number,
-  playerName: string,
+  userPrincipal: string,
 ): Promise<boolean> {
   const [row] = await db
     .select({ id: rsvps.id })
     .from(rsvps)
-    .where(and(eq(rsvps.eventId, eventId), eq(rsvps.playerName, playerName)))
+    .where(
+      and(eq(rsvps.eventId, eventId), eq(rsvps.userPrincipal, userPrincipal)),
+    )
     .limit(1);
 
   return row !== undefined;

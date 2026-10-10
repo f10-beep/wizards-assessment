@@ -9,15 +9,17 @@ than letting them pile up.
 ## Next
 
 - [ ] Organizer story: post an event, see attendee list for own events
-- [ ] Authenticated registration (if/when required — likely once an
-      organizer story needs real attendee management, not just an MVP
-      demo): add a `users` table + nullable `rsvps.userId` FK, move the
-      RSVP uniqueness constraint from `(eventId, playerName)` to
-      `(eventId, userId)`, and have the RSVP mutation take the
-      authenticated session's user id instead of a free-text name —
-      `playerName` can stay as a display label. The capacity-safe
-      transaction in `src/server/events/rsvp.ts` (`SELECT ... FOR UPDATE`
-      + re-read count) is identity-agnostic and doesn't need to change.
+- [ ] Real identity provider (if/when required — likely once an organizer
+      story needs real attendee management, not just an MVP demo):
+      replace the manually-typed `userPrincipal` field with a session
+      established by actual login, and have the RSVP mutation read the
+      principal from that session instead of trusting client input. See
+      ADR 0005 — `rsvps.userPrincipal` and the uniqueness constraint on
+      `(eventId, userPrincipal)` are already shaped for this and
+      shouldn't need to change, only how the value gets populated. The
+      capacity-safe transaction in `src/server/events/rsvp.ts`
+      (`SELECT ... FOR UPDATE` + re-read count) is identity-agnostic and
+      doesn't need to change either.
 - [ ] Reintroduce `drizzle-orm/neon-http` for the read-only
       browse/detail queries if metrics ever show the pooled driver's
       per-request connection overhead matters — deferred, not built
@@ -36,6 +38,12 @@ than letting them pile up.
 
 ## Done
 
+- [x] Reworked identity from a free-text `playerName` to an opaque
+      `userPrincipal` (email-shaped, not validated as one) across the
+      schema, API, and UI — a closer stand-in for what a real identity
+      provider will eventually hand the app. See ADR 0005. No behavior
+      change for P1-P4; this is a naming/modeling change only, no real
+      auth or validation added.
 - [x] Establish development principles in `AGENTS.md`
 - [x] Choose MVP stack (ADR 0002)
 - [x] Scaffold Next.js/tRPC/Drizzle app

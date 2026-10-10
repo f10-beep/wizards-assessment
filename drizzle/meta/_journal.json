@@ -8,6 +8,13 @@
       "when": 1791600910603,
       "tag": "0000_brown_cerise",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791652809184,
+      "tag": "0001_rename_player_name_to_user_principal",
+      "breakpoints": true
     }
   ]
 }

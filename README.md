@@ -78,14 +78,20 @@ rather than here.
 - **An event's detail page shows it regardless of whether it's already
   started**, unlike the browse list's "upcoming" filter. A direct link to
   an event shouldn't 404 just because it's in progress.
-- **Identity is a remembered name, not an account.** RSVPing asks for a
-  name (remembered client-side for next time), not a login — there's no
-  accounts system in the brief, and `rsvps.playerName` already existed as
-  a plain string. A duplicate RSVP from the same name on the same event is
-  rejected, and cancelling an RSVP uses the same remembered name as proof
-  of "ownership" (no login to check against) — same trust model as RSVPing
-  itself. See `TODO.md` for the migration path if authenticated
-  registration becomes a requirement later.
+- **Identity is a remembered user principal, not an account.** RSVPing
+  asks for a principal (an opaque, email-shaped identifier, remembered
+  client-side for next time), not a login — there's no accounts system or
+  real auth in the brief. It's deliberately modeled as a stub for a real
+  identity provider rather than a free-text display name (`rsvps` stores
+  it as `userPrincipal`, not `playerName`): nothing above the storage
+  layer parses, splits, or treats it as a name — a thin manual-entry
+  field stands in for login so the rest of the app can be built against
+  the shape a real auth provider would eventually hand it. A duplicate
+  RSVP from the same principal on the same event is rejected, and
+  cancelling an RSVP uses the same remembered principal as proof of
+  "ownership" (no login to check against) — same trust model as RSVPing
+  itself. See [ADR 0005](./docs/decisions/0005-user-principal-identity.md)
+  and `TODO.md` for the migration path to a real identity provider.
 - **Capacity-safe RSVPs required switching Neon's driver** (see
   [ADR 0003](./docs/decisions/0003-neon-pooled-transactional-driver.md)):
   the originally-wired `neon-http` driver has no transaction support, so

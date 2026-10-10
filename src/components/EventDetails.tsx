@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
 
-// Identity is a remembered name, not an account — see AGENTS.md's note on
-// identity being deferred until a story needs to attribute an action, and
-// README "Assumptions where the brief was silent".
-const PLAYER_NAME_STORAGE_KEY = "gameNight.playerName";
+// Opaque identity key for the MVP (no real auth yet) — see
+// docs/decisions/0005-user-principal-identity.md. Everything above this
+// layer treats it as a read-only identifier (email-shaped, but not
+// validated as one), never parsed, split, or displayed as if it were a
+// display name.
+const USER_PRINCIPAL_STORAGE_KEY = "gameNight.userPrincipal";
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
   weekday: "long",
@@ -124,33 +126,37 @@ function EventDetailsCard({ event }: { event: EventDetailData }) {
 
 function RsvpForm({ eventId, isFull }: { eventId: number; isFull: boolean }) {
   const utils = trpc.useUtils();
-  // Lazy initializer (not an effect) so the remembered name is in place
-  // for the very first render, not a frame after.
-  const [playerName, setPlayerName] = useState(() =>
+  // Lazy initializer (not an effect) so the remembered principal is in
+  // place for the very first render, not a frame after.
+  const [userPrincipal, setUserPrincipal] = useState(() =>
     typeof window === "undefined"
       ? ""
-      : window.localStorage.getItem(PLAYER_NAME_STORAGE_KEY) ?? "",
+      : window.localStorage.getItem(USER_PRINCIPAL_STORAGE_KEY) ?? "",
   );
-  const trimmedName = playerName.trim();
+  const trimmedPrincipal = userPrincipal.trim();
 
-  // Whether this remembered name already has an RSVP here — read from the
-  // server (not local-only state) so "Cancel RSVP" shows correctly even
-  // after a page reload, not just right after submitting the form.
+  // Whether this remembered principal already has an RSVP here — read
+  // from the server (not local-only state) so "Cancel RSVP" shows
+  // correctly even after a page reload, not just right after submitting
+  // the form.
   const myRsvpQuery = trpc.events.myRsvp.useQuery(
-    { eventId, playerName: trimmedName },
-    { enabled: trimmedName.length > 0 },
+    { eventId, userPrincipal: trimmedPrincipal },
+    { enabled: trimmedPrincipal.length > 0 },
   );
 
   function invalidateEventState() {
     void utils.events.byId.invalidate({ id: eventId });
-    void utils.events.myRsvp.invalidate({ eventId, playerName: trimmedName });
+    void utils.events.myRsvp.invalidate({
+      eventId,
+      userPrincipal: trimmedPrincipal,
+    });
   }
 
   const rsvpMutation = trpc.events.rsvp.useMutation({
     onSuccess: (_data, variables) => {
       window.localStorage.setItem(
-        PLAYER_NAME_STORAGE_KEY,
-        variables.playerName,
+        USER_PRINCIPAL_STORAGE_KEY,
+        variables.userPrincipal,
       );
       invalidateEventState();
     },
@@ -164,12 +170,12 @@ function RsvpForm({ eventId, isFull }: { eventId: number; isFull: boolean }) {
     return (
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm font-medium text-emerald-600">
-          You&apos;re in, {trimmedName}! See you there.
+          You&apos;re in, {trimmedPrincipal}! See you there.
         </p>
         <button
           type="button"
           onClick={() =>
-            cancelMutation.mutate({ eventId, playerName: trimmedName })
+            cancelMutation.mutate({ eventId, userPrincipal: trimmedPrincipal })
           }
           disabled={cancelMutation.isPending}
           className="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
@@ -197,23 +203,23 @@ function RsvpForm({ eventId, isFull }: { eventId: number; isFull: boolean }) {
     <form
       onSubmit={(formEvent) => {
         formEvent.preventDefault();
-        const name = playerName.trim();
-        if (!name) return;
-        rsvpMutation.mutate({ eventId, playerName: name });
+        const principal = userPrincipal.trim();
+        if (!principal) return;
+        rsvpMutation.mutate({ eventId, userPrincipal: principal });
       }}
       className="mt-4 flex flex-col gap-2 sm:flex-row"
     >
       <input
         type="text"
         required
-        placeholder="Your name"
-        value={playerName}
-        onChange={(event) => setPlayerName(event.target.value)}
+        placeholder="you@example.com"
+        value={userPrincipal}
+        onChange={(event) => setUserPrincipal(event.target.value)}
         className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none"
       />
       <button
         type="submit"
-        disabled={rsvpMutation.isPending || !playerName.trim()}
+        disabled={rsvpMutation.isPending || !userPrincipal.trim()}
         className="shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
       >
         {rsvpMutation.isPending ? "RSVPing…" : "RSVP"}

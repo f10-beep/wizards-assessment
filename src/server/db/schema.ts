@@ -19,13 +19,15 @@ export const rsvps = pgTable(
     eventId: integer("event_id")
       .notNull()
       .references(() => events.id, { onDelete: "cascade" }),
-    // Identity is a simple name string for the MVP (no accounts) — see
-    // AGENTS.md ambiguity note in README. Revisit if a real identity
-    // system lands later.
-    playerName: text("player_name").notNull(),
+    // Opaque identity key for the MVP (no real auth yet) — see
+    // docs/decisions/0005-user-principal-identity.md. Everything above
+    // this layer treats it as a read-only identifier (email-shaped, but
+    // not validated as one), never parsed, split, or displayed as if it
+    // were a display name.
+    userPrincipal: text("user_principal").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
-  (table) => [unique().on(table.eventId, table.playerName)],
+  (table) => [unique().on(table.eventId, table.userPrincipal)],
 );

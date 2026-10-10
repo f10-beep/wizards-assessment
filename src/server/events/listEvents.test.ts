@@ -51,10 +51,10 @@ suite("listUpcomingEvents", () => {
     const byTitle = Object.fromEntries(seeded.map((e) => [e.title, e.id]));
 
     await db.insert(schema.rsvps).values([
-      { eventId: byTitle["Friday Night Magic"]!, playerName: "Alex" },
-      { eventId: byTitle["Friday Night Magic"]!, playerName: "Priya" },
-      { eventId: byTitle["Catan Night"]!, playerName: "Sam" },
-      { eventId: byTitle["Catan Night"]!, playerName: "Jordan" }, // fills capacity 2
+      { eventId: byTitle["Friday Night Magic"]!, userPrincipal: "Alex" },
+      { eventId: byTitle["Friday Night Magic"]!, userPrincipal: "Priya" },
+      { eventId: byTitle["Catan Night"]!, userPrincipal: "Sam" },
+      { eventId: byTitle["Catan Night"]!, userPrincipal: "Jordan" }, // fills capacity 2
     ]);
   });
 
@@ -158,8 +158,8 @@ suite("getEventById", () => {
     pastEventId = pastEvent!.id;
 
     await db.insert(schema.rsvps).values([
-      { eventId, playerName: "Alex" },
-      { eventId, playerName: "Priya" }, // fills capacity 2
+      { eventId, userPrincipal: "Alex" },
+      { eventId, userPrincipal: "Priya" }, // fills capacity 2
     ]);
   });
 
