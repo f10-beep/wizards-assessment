@@ -1,30 +1,33 @@
-import { mkdirSync } from "node:fs";
-import { Pool } from "@neondatabase/serverless";
+import { Pool as NeonPool } from "@neondatabase/serverless";
 import { drizzle as drizzleNeon } from "drizzle-orm/neon-serverless";
-import { drizzle as drizzlePglite } from "drizzle-orm/pglite";
-import { PGlite } from "@electric-sql/pglite";
+import { Pool as PgPool } from "pg";
+import { drizzle as drizzlePg } from "drizzle-orm/node-postgres";
 import * as schema from "./schema";
 
 /**
- * Local dev/test has no Postgres server or Docker available, so we run
- * against PGlite (real Postgres compiled to WASM, embedded in-process).
- * Production talks to Neon through its pooled, session-based driver (not
- * the stateless HTTP one) because RSVP writes need real transactions —
- * see docs/decisions/0003-neon-pooled-transactional-driver.md. DATABASE_URL
- * should be Neon's pooled connection string (see .env.example).
+ * Local dev/test runs against Postgres in Docker (see docker-compose.yml);
+ * production runs against Neon through its pooled, session-based driver
+ * because RSVP writes need real transactions — see
+ * docs/decisions/0003-neon-pooled-transactional-driver.md and
+ * docs/decisions/0004-docker-postgres-local-dev.md. Both sides are a real
+ * Postgres server process with full transaction support; the branch below
+ * is only about which wire protocol reaches each host.
  */
 function createDb() {
   const url = process.env.DATABASE_URL;
-  if (url) {
-    const pool = new Pool({ connectionString: url });
+  if (!url) {
+    throw new Error(
+      'DATABASE_URL is required. For local dev, run `docker compose up -d` and set it to the local Postgres connection string — see .env.example and README "Local development".',
+    );
+  }
+
+  if (new URL(url).hostname.endsWith(".neon.tech")) {
+    const pool = new NeonPool({ connectionString: url });
     return { kind: "neon" as const, db: drizzleNeon(pool, { schema }) };
   }
 
-  const dataDir =
-    process.env.NODE_ENV === "test" ? undefined : "./.pglite/dev";
-  if (dataDir) mkdirSync(dataDir, { recursive: true });
-  const client = new PGlite(dataDir);
-  return { kind: "pglite" as const, db: drizzlePglite(client, { schema }) };
+  const pool = new PgPool({ connectionString: url });
+  return { kind: "postgres" as const, db: drizzlePg(pool, { schema }) };
 }
 
 export const dbResult = createDb();

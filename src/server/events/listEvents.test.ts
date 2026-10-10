@@ -1,26 +1,18 @@
 import assert from "node:assert/strict";
-import { before, suite, test } from "node:test";
-import { drizzle } from "drizzle-orm/pglite";
-import { migrate } from "drizzle-orm/pglite/migrator";
-import { PGlite } from "@electric-sql/pglite";
+import { after, before, suite, test } from "node:test";
 import * as schema from "../db/schema";
+import { createTestDb } from "../db/testDb";
 import { getEventById, listGameTypes, listUpcomingEvents } from "./listEvents";
 
 const HOUR = 60 * 60 * 1000;
 const now = new Date("2026-06-01T12:00:00Z");
 
-async function createTestDb() {
-  const client = new PGlite();
-  const db = drizzle(client, { schema });
-  await migrate(db, { migrationsFolder: "./drizzle" });
-  return db;
-}
-
 suite("listUpcomingEvents", () => {
-  let db: Awaited<ReturnType<typeof createTestDb>>;
+  let db: Awaited<ReturnType<typeof createTestDb>>["db"];
+  let cleanup: () => Promise<void>;
 
   before(async () => {
-    db = await createTestDb();
+    ({ db, cleanup } = await createTestDb());
 
     const seeded = await db
       .insert(schema.events)
@@ -65,6 +57,8 @@ suite("listUpcomingEvents", () => {
       { eventId: byTitle["Catan Night"]!, playerName: "Jordan" }, // fills capacity 2
     ]);
   });
+
+  after(() => cleanup());
 
   test("excludes events that already started", async () => {
     const results = await listUpcomingEvents(db, {}, now);
@@ -131,12 +125,13 @@ suite("listUpcomingEvents", () => {
 });
 
 suite("getEventById", () => {
-  let db: Awaited<ReturnType<typeof createTestDb>>;
+  let db: Awaited<ReturnType<typeof createTestDb>>["db"];
+  let cleanup: () => Promise<void>;
   let eventId: number;
   let pastEventId: number;
 
   before(async () => {
-    db = await createTestDb();
+    ({ db, cleanup } = await createTestDb());
 
     const [event] = await db
       .insert(schema.events)
@@ -167,6 +162,8 @@ suite("getEventById", () => {
       { eventId, playerName: "Priya" }, // fills capacity 2
     ]);
   });
+
+  after(() => cleanup());
 
   test("returns the event with its live attendee count", async () => {
     const result = await getEventById(db, eventId);

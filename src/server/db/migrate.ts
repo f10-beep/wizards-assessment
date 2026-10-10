@@ -1,5 +1,5 @@
 import { migrate as migrateNeon } from "drizzle-orm/neon-serverless/migrator";
-import { migrate as migratePglite } from "drizzle-orm/pglite/migrator";
+import { migrate as migratePg } from "drizzle-orm/node-postgres/migrator";
 import { dbResult } from "./index";
 
 const migrationsFolder = "./drizzle";
@@ -8,7 +8,7 @@ async function main() {
   if (dbResult.kind === "neon") {
     await migrateNeon(dbResult.db, { migrationsFolder });
   } else {
-    await migratePglite(dbResult.db, { migrationsFolder });
+    await migratePg(dbResult.db, { migrationsFolder });
   }
   console.log(`Migrations applied (${dbResult.kind}).`);
 }

@@ -17,21 +17,34 @@ Next.js (App Router, TypeScript) + tRPC + Drizzle + Postgres, per
 
 ## Local development
 
-No Docker or local Postgres server required. With `DATABASE_URL` unset, the
-app runs against [PGlite](https://pglite.dev) — real Postgres compiled to
-WASM, embedded in-process — at `./.pglite/dev`. Set `DATABASE_URL` to a Neon
-connection string to run against real Postgres instead (see `.env.example`).
+### Prerequisites
+
+- Node.js
+- [Docker Engine](https://docs.docker.com/engine/install/) with the Compose
+  plugin (`docker compose version` should work). Installing Docker itself
+  needs `sudo`/admin rights on your machine; nothing after that does.
+
+### Setup
+
+Local dev and tests run against Postgres in Docker
+([ADR 0004](./docs/decisions/0004-docker-postgres-local-dev.md)). Set
+`DATABASE_URL` to a Neon connection string instead to run against real
+production-like infra (see `.env.example`).
 
 ```bash
+cp .env.example .env    # DATABASE_URL already points at the local container
+docker compose up -d    # starts Postgres (docker-compose.yml)
 npm install
-npm run db:generate   # only needed after changing src/server/db/schema.ts
-npm run db:migrate     # applies drizzle/*.sql to the local PGlite db
-npm run db:seed        # sample events + RSVPs for the browse UI to show
-npm run dev             # http://localhost:3000
+npm run db:generate      # only needed after changing src/server/db/schema.ts
+npm run db:migrate        # applies drizzle/*.sql to the local Postgres db
+npm run db:seed            # sample events + RSVPs for the browse UI to show
+npm run dev                 # http://localhost:3000
 ```
 
-Other scripts: `npm test` (unit/integration tests against an in-memory
-PGlite instance), `npm run typecheck`, `npm run lint`, `npm run build`.
+Other scripts: `npm test` (unit/integration tests against the same Docker
+Postgres, each test file isolated in its own schema), `npm run typecheck`,
+`npm run lint`, `npm run build`. `docker compose down` stops the database;
+add `-v` to also drop its data volume.
 
 ## Project layout
 
@@ -43,7 +56,7 @@ src/server/trpc/     The API surface — thin: input validation + wiring to
 src/server/<domain>/ Query/mutation logic per domain (e.g. events/), kept
                      independent of tRPC so it's directly unit-testable.
 src/server/db/       Drizzle schema, migration runner, and the dev/prod
-                     driver switch (PGlite vs. Neon).
+                     driver switch (local Postgres vs. Neon).
 drizzle/             Generated SQL migrations — don't hand-edit.
 scripts/             One-off/dev scripts (currently just db:seed).
 ```

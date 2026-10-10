@@ -1,28 +1,20 @@
 import assert from "node:assert/strict";
-import { before, suite, test } from "node:test";
-import { drizzle } from "drizzle-orm/pglite";
-import { migrate } from "drizzle-orm/pglite/migrator";
-import { PGlite } from "@electric-sql/pglite";
+import { after, before, suite, test } from "node:test";
 import * as schema from "../db/schema";
+import { createTestDb } from "../db/testDb";
 import { cancelRsvp, hasRsvped, rsvpToEvent } from "./rsvp";
 
 const HOUR = 60 * 60 * 1000;
 const now = new Date("2026-06-01T12:00:00Z");
 
-async function createTestDb() {
-  const client = new PGlite();
-  const db = drizzle(client, { schema });
-  await migrate(db, { migrationsFolder: "./drizzle" });
-  return db;
-}
-
 suite("rsvpToEvent", () => {
-  let db: Awaited<ReturnType<typeof createTestDb>>;
+  let db: Awaited<ReturnType<typeof createTestDb>>["db"];
+  let cleanup: () => Promise<void>;
   let openEventId: number;
   let fullEventId: number;
 
   before(async () => {
-    db = await createTestDb();
+    ({ db, cleanup } = await createTestDb());
 
     const [openEvent] = await db
       .insert(schema.events)
@@ -53,6 +45,8 @@ suite("rsvpToEvent", () => {
       .values({ eventId: fullEventId, playerName: "Sam" });
   });
 
+  after(() => cleanup());
+
   test("confirms an RSVP when seats are open", async () => {
     const result = await rsvpToEvent(db, openEventId, "Alex");
     assert.deepEqual(result, { status: "confirmed" });
@@ -74,12 +68,6 @@ suite("rsvpToEvent", () => {
     assert.deepEqual(result, { status: "event_not_found" });
   });
 
-  // PGlite is a single, embedded connection, so this can't reproduce true
-  // multi-connection interleaving the way concurrent requests against real
-  // Postgres would — it guards the counting/locking logic's correctness,
-  // not genuine race timing. See
-  // docs/decisions/0003-neon-pooled-transactional-driver.md for why
-  // SELECT ... FOR UPDATE is still the right pattern against real Neon.
   test("never overbooks under concurrent RSVP attempts", async () => {
     const [raceEvent] = await db
       .insert(schema.events)
@@ -106,11 +94,12 @@ suite("rsvpToEvent", () => {
 });
 
 suite("cancelRsvp", () => {
-  let db: Awaited<ReturnType<typeof createTestDb>>;
+  let db: Awaited<ReturnType<typeof createTestDb>>["db"];
+  let cleanup: () => Promise<void>;
   let eventId: number;
 
   before(async () => {
-    db = await createTestDb();
+    ({ db, cleanup } = await createTestDb());
 
     const [event] = await db
       .insert(schema.events)
@@ -128,6 +117,8 @@ suite("cancelRsvp", () => {
       .insert(schema.rsvps)
       .values({ eventId, playerName: "Sam" });
   });
+
+  after(() => cleanup());
 
   test("cancels an existing RSVP", async () => {
     const result = await cancelRsvp(db, eventId, "Sam");
@@ -147,11 +138,12 @@ suite("cancelRsvp", () => {
 });
 
 suite("hasRsvped", () => {
-  let db: Awaited<ReturnType<typeof createTestDb>>;
+  let db: Awaited<ReturnType<typeof createTestDb>>["db"];
+  let cleanup: () => Promise<void>;
   let eventId: number;
 
   before(async () => {
-    db = await createTestDb();
+    ({ db, cleanup } = await createTestDb());
 
     const [event] = await db
       .insert(schema.events)
@@ -169,6 +161,8 @@ suite("hasRsvped", () => {
       .insert(schema.rsvps)
       .values({ eventId, playerName: "Jordan" });
   });
+
+  after(() => cleanup());
 
   test("is true for a player who has RSVPed", async () => {
     assert.equal(await hasRsvped(db, eventId, "Jordan"), true);
