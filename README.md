@@ -136,6 +136,21 @@ rather than here.
   server-side regardless of what a client last polled, so staleness
   never causes an overbook.
 
+## Scale: 12-month path
+
+Built for ~2k players/~50 events; designed to reach ~200k/~5k (50:1
+read-heavy, 10× event-day spikes) without a rewrite. Hot path is the
+browse list's live counts. Levers already deferred in `TODO.md`, in the
+order I'd pull them:
+
+1. Polling → push, so read volume tracks actual changes instead of
+   viewers × poll frequency (polling's already behind an interface, per
+   [ADR 0002](./docs/decisions/0002-mvp-stack.md)).
+2. Split reads onto Neon's HTTP driver/a read replica — writes already
+   own the pooled connection ([ADR 0003](./docs/decisions/0003-neon-pooled-transactional-driver.md)).
+3. Denormalize attendee counts into a maintained counter instead of a
+   live `COUNT` per request.
+
 ## Notes
 
 `npm audit` flags transitive, dev-tooling-only vulnerabilities (an old
