@@ -48,6 +48,33 @@ Postgres, each test file isolated in its own schema), `npm run typecheck`,
 `npm run lint`, `npm run build`. `docker compose down` stops the database;
 add `-v` to also drop its data volume.
 
+## Deploying
+
+Target is Vercel (app) + Neon (Postgres), per
+[ADR 0002](./docs/decisions/0002-mvp-stack.md). No `vercel.json` or CI
+pipeline — Vercel's own git integration (build + deploy on push) is the
+whole pipeline; a separate GitHub Actions workflow would just duplicate
+it for a single-app MVP. Pages fetch through tRPC at request time rather
+than querying the database at build time, so `DATABASE_URL` only needs
+to exist at runtime, not during the Vercel build.
+
+1. Create a Neon project and copy its **pooled** connection string (the
+   one with `-pooler` in the hostname — required, see
+   [ADR 0003](./docs/decisions/0003-neon-pooled-transactional-driver.md)).
+2. In Vercel, import this GitHub repo as a project (framework preset
+   auto-detects Next.js; default build command is fine) and set
+   `DATABASE_URL` to that string in the project's environment variables.
+3. Apply migrations and seed data against Neon once, from a local
+   checkout, before or right after the first deploy:
+   ```bash
+   DATABASE_URL=<neon pooled connection string> npm run db:migrate
+   DATABASE_URL=<neon pooled connection string> npm run db:seed   # optional
+   ```
+   Deliberately a manual, one-off step rather than a build hook —
+   running migrations automatically on every build would let concurrent
+   preview deployments race each other against the same database.
+4. Push to `main`; Vercel builds and deploys automatically.
+
 ## Time spent
 
 Roughly 8-10 hours, across several sessions (one story per session — see
