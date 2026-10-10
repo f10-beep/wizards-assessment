@@ -171,6 +171,7 @@ function AttendeeRoster({ eventId }: { eventId: number }) {
 function RsvpForm({ eventId, isFull }: { eventId: number; isFull: boolean }) {
   const utils = trpc.useUtils();
   const userPrincipal = useStoredUserPrincipal();
+  const isOrganizer = useStoredIsOrganizer();
   const trimmedPrincipal = userPrincipal.trim();
 
   // Whether this remembered principal already has an RSVP here — read
@@ -187,6 +188,14 @@ function RsvpForm({ eventId, isFull }: { eventId: number; isFull: boolean }) {
     void utils.events.myRsvp.invalidate({
       eventId,
       userPrincipal: trimmedPrincipal,
+    });
+    // Covers the case where the organizer RSVPs to their own event:
+    // AttendeeRoster's query is keyed on organizerPrincipal/isOrganizer,
+    // so it needs invalidating here too, not just on its own 30s poll.
+    void utils.events.attendees.invalidate({
+      eventId,
+      organizerPrincipal: trimmedPrincipal,
+      isOrganizer,
     });
   }
 

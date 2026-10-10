@@ -35,6 +35,11 @@ than letting them pile up.
 - [ ] Decide on a deployment target (Vercel + Neon per ADR 0002) once
       ready to make this reachable by a stranger's browser, not just
       runnable locally
+- [ ] Set up frontend test infrastructure (component/hook tests, e.g.
+      React Testing Library + jsdom) — there's currently none, so the
+      attendee-roster-not-invalidating fix (`EventDetails.tsx`'s
+      `RsvpForm`) shipped without a regression test, unlike the
+      server-side fixes under "Done"
 
 ## Done
 
