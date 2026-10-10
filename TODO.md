@@ -8,12 +8,22 @@ than letting them pile up.
 
 ## Next
 
-- [ ] RSVP / cancel flow (player), capacity-safe writes — the one piece
-      of logic that needs deliberate concurrency test coverage, per
-      ADR 0002 consequences
+- [ ] Cancel-RSVP flow (player) — P3 only covers RSVPing; cancelling an
+      existing RSVP is a separate, not-yet-given story
 - [ ] Organizer story: post an event, see attendee list for own events
-- [ ] Identity ("who am I" picker) — only needed once RSVPs are
-      attributable to a visitor; `rsvps.playerName` is a free string today
+- [ ] Authenticated registration (if/when required — likely once an
+      organizer story needs real attendee management, not just an MVP
+      demo): add a `users` table + nullable `rsvps.userId` FK, move the
+      RSVP uniqueness constraint from `(eventId, playerName)` to
+      `(eventId, userId)`, and have the RSVP mutation take the
+      authenticated session's user id instead of a free-text name —
+      `playerName` can stay as a display label. The capacity-safe
+      transaction in `src/server/events/rsvp.ts` (`SELECT ... FOR UPDATE`
+      + re-read count) is identity-agnostic and doesn't need to change.
+- [ ] Reintroduce `drizzle-orm/neon-http` for the read-only
+      browse/detail queries if metrics ever show the pooled driver's
+      per-request connection overhead matters — deferred, not built
+      speculatively now, per ADR 0003 alternatives
 - [ ] Swap MVP polling for real push (managed realtime provider or
       self-hosted WS + Redis pub/sub) once latency or load requires
       it — see ADR 0002 consequences
@@ -34,3 +44,7 @@ than letting them pile up.
 - [x] P1: Player browses upcoming events — search/filter by game type
       or text, sorted soonest-first, with live attendee counts
 - [x] P2: Player opens an event to see its details and seats left
+- [x] P3: Player RSVPs to an event with open seats; blocked with a clear
+      message once it's full. Capacity-safe against concurrent RSVPs via
+      a transaction (`SELECT ... FOR UPDATE` + re-read count + insert) —
+      required switching Neon's driver, see ADR 0003

@@ -1,7 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { trpc } from "@/lib/trpc/client";
+
+// Identity is a remembered name, not an account — see AGENTS.md's note on
+// identity being deferred until a story needs to attribute an action, and
+// README "Assumptions where the brief was silent".
+const PLAYER_NAME_STORAGE_KEY = "gameNight.playerName";
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
   weekday: "long",
@@ -110,6 +116,82 @@ function EventDetailsCard({ event }: { event: EventDetailData }) {
           />
         </div>
       </div>
+
+      <RsvpForm eventId={event.id} isFull={isFull} />
     </article>
+  );
+}
+
+function RsvpForm({ eventId, isFull }: { eventId: number; isFull: boolean }) {
+  const utils = trpc.useUtils();
+  // Lazy initializer (not an effect) so the remembered name is in place
+  // for the very first render, not a frame after.
+  const [playerName, setPlayerName] = useState(() =>
+    typeof window === "undefined"
+      ? ""
+      : window.localStorage.getItem(PLAYER_NAME_STORAGE_KEY) ?? "",
+  );
+  const [confirmed, setConfirmed] = useState(false);
+
+  const rsvpMutation = trpc.events.rsvp.useMutation({
+    onSuccess: (_data, variables) => {
+      window.localStorage.setItem(
+        PLAYER_NAME_STORAGE_KEY,
+        variables.playerName,
+      );
+      setConfirmed(true);
+      void utils.events.byId.invalidate({ id: eventId });
+    },
+  });
+
+  if (confirmed) {
+    return (
+      <p className="mt-4 text-sm font-medium text-emerald-600">
+        You&apos;re in, {playerName.trim()}! See you there.
+      </p>
+    );
+  }
+
+  if (isFull) {
+    return (
+      <p className="mt-4 text-sm text-rose-600">
+        This event is full — RSVPs are closed.
+      </p>
+    );
+  }
+
+  return (
+    <form
+      onSubmit={(formEvent) => {
+        formEvent.preventDefault();
+        const name = playerName.trim();
+        if (!name) return;
+        rsvpMutation.mutate({ eventId, playerName: name });
+      }}
+      className="mt-4 flex flex-col gap-2 sm:flex-row"
+    >
+      <input
+        type="text"
+        required
+        placeholder="Your name"
+        value={playerName}
+        onChange={(event) => setPlayerName(event.target.value)}
+        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none"
+      />
+      <button
+        type="submit"
+        disabled={rsvpMutation.isPending || !playerName.trim()}
+        className="shrink-0 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+      >
+        {rsvpMutation.isPending ? "RSVPing…" : "RSVP"}
+      </button>
+      {rsvpMutation.error && (
+        <p className="text-sm text-rose-600 sm:basis-full">
+          {rsvpMutation.error.data?.code === "CONFLICT"
+            ? rsvpMutation.error.message
+            : "Couldn't RSVP. Try again."}
+        </p>
+      )}
+    </form>
   );
 }

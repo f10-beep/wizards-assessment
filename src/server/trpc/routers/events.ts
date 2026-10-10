@@ -6,6 +6,7 @@ import {
   listGameTypes,
   listUpcomingEvents,
 } from "../../events/listEvents";
+import { rsvpToEvent } from "../../events/rsvp";
 import { publicProcedure, router } from "../init";
 
 export const eventsRouter = router({
@@ -41,4 +42,36 @@ export const eventsRouter = router({
     }),
 
   gameTypes: publicProcedure.query(() => listGameTypes(db)),
+
+  rsvp: publicProcedure
+    .input(
+      z.object({
+        eventId: z.number().int().positive(),
+        playerName: z.string().trim().min(1).max(100),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const result = await rsvpToEvent(db, input.eventId, input.playerName);
+
+      if (result.status === "event_not_found") {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Event not found",
+        });
+      }
+      if (result.status === "event_full") {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "This event is full.",
+        });
+      }
+      if (result.status === "already_rsvped") {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "You've already RSVPed to this event.",
+        });
+      }
+
+      return { status: "confirmed" as const };
+    }),
 });

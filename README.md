@@ -65,9 +65,16 @@ rather than here.
 - **An event's detail page shows it regardless of whether it's already
   started**, unlike the browse list's "upcoming" filter. A direct link to
   an event shouldn't 404 just because it's in progress.
-- **Identity is deferred** until a story actually needs to attribute an
-  action to a visitor (e.g. RSVP). `rsvps.playerName` is a plain string for
-  now.
+- **Identity is a remembered name, not an account.** RSVPing asks for a
+  name (remembered client-side for next time), not a login — there's no
+  accounts system in the brief, and `rsvps.playerName` already existed as
+  a plain string. A duplicate RSVP from the same name on the same event is
+  rejected. See `TODO.md` for the migration path if authenticated
+  registration becomes a requirement later.
+- **Capacity-safe RSVPs required switching Neon's driver** (see
+  [ADR 0003](./docs/decisions/0003-neon-pooled-transactional-driver.md)):
+  the originally-wired `neon-http` driver has no transaction support, so
+  it couldn't implement the race-safe capacity check ADR 0002 called for.
 - **TypeScript is pinned to 6.0.3, not the current 7.0.x line**, because
   `typescript-eslint` doesn't support TS 7's new API yet.
 
