@@ -56,6 +56,19 @@ than letting them pile up.
       (opening one connection per player before racing) forces genuine
       concurrency; verified the test now fails (9-10 confirmed instead
       of 1) with the lock removed and passes with it restored.
+- [x] S2 validation: confirmed a player holds at most one active RSVP
+      per event and a retried/double-submitted RSVP never creates a
+      duplicate or double-counts. Proof is
+      `src/server/events/rsvp.test.ts`'s "never double-counts a
+      retried/double-submitted RSVP from the same principal" — same
+      real-Postgres, pre-warmed-pool race technique as the S1 test, 10
+      concurrent `rsvpToEvent` calls from the same principal to one
+      event. Verified non-vacuous by temporarily removing the `FOR
+      UPDATE` lock on the event row in `rsvp.ts`: the test fails (9-10
+      confirmed instead of 1) without the lock and passes with it
+      restored, confirming the row lock — not just the unique
+      constraint on `(eventId, userPrincipal)` — is what makes
+      concurrent double-submits safe.
 - [x] O2: organizer sees the attendee list for events they created.
       `events.organizerPrincipal` (ADR 0006) is now enforced as
       ownership, not just recorded: `getEventWithAttendees`

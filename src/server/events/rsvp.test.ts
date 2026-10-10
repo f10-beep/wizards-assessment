@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, before, suite, test } from "node:test";
-import { sql } from "drizzle-orm";
+import { and, count, eq, sql } from "drizzle-orm";
 import * as schema from "../db/schema";
 import { createTestDb } from "../db/testDb";
 import { cancelRsvp, hasRsvped, rsvpToEvent } from "./rsvp";
@@ -69,6 +69,46 @@ suite("rsvpToEvent", () => {
   test("rejects an RSVP for a nonexistent event", async () => {
     const result = await rsvpToEvent(db, 999_999, "Alex");
     assert.deepEqual(result, { status: "event_not_found" });
+  });
+
+  test("never double-counts a retried/double-submitted RSVP from the same principal", async () => {
+    const [raceEvent] = await db
+      .insert(schema.events)
+      .values({
+        title: "Resubmit Stress Test",
+        gameType: "Magic: The Gathering",
+        location: "The Round Table Games",
+        startsAt: new Date(now.getTime() + HOUR),
+        capacity: 10,
+        organizerPrincipal: "organizer@example.com",
+      })
+      .returning({ id: schema.events.id });
+    const raceEventId = raceEvent!.id;
+
+    // Same pool pre-warm as the overbooking race test above: without it,
+    // connection-establishment latency serializes these calls by accident,
+    // passing even if the duplicate-RSVP handling were broken.
+    await Promise.all(Array.from({ length: 10 }, () => db.execute(sql`select 1`)));
+
+    const results = await Promise.all(
+      Array.from({ length: 10 }, () => rsvpToEvent(db, raceEventId, "Quinn")),
+    );
+
+    const confirmed = results.filter((r) => r.status === "confirmed");
+    const duplicate = results.filter((r) => r.status === "already_rsvped");
+    assert.equal(confirmed.length, 1);
+    assert.equal(duplicate.length, 9);
+
+    const [row] = await db
+      .select({ attendeeCount: count() })
+      .from(schema.rsvps)
+      .where(
+        and(
+          eq(schema.rsvps.eventId, raceEventId),
+          eq(schema.rsvps.userPrincipal, "Quinn"),
+        ),
+      );
+    assert.equal(row!.attendeeCount, 1);
   });
 
   test("never overbooks under concurrent RSVP attempts", async () => {
