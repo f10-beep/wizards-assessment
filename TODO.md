@@ -8,8 +8,6 @@ than letting them pile up.
 
 ## Next
 
-- [ ] Cancel-RSVP flow (player) — P3 only covers RSVPing; cancelling an
-      existing RSVP is a separate, not-yet-given story
 - [ ] Organizer story: post an event, see attendee list for own events
 - [ ] Authenticated registration (if/when required — likely once an
       organizer story needs real attendee management, not just an MVP
@@ -48,3 +46,7 @@ than letting them pile up.
       message once it's full. Capacity-safe against concurrent RSVPs via
       a transaction (`SELECT ... FOR UPDATE` + re-read count + insert) —
       required switching Neon's driver, see ADR 0003
+- [x] P4: Player cancels their RSVP, freeing the seat. Plain delete (no
+      locking needed — a delete can't cause overbooking). The RSVP form
+      now reads "already RSVPed?" from the server instead of local-only
+      state, so "Cancel RSVP" shows correctly after a page reload too.

@@ -1,4 +1,4 @@
-import { count, eq } from "drizzle-orm";
+import { and, count, eq } from "drizzle-orm";
 import type { db as Db } from "../db/index";
 import { events, rsvps } from "../db/schema";
 
@@ -7,6 +7,10 @@ export type RsvpResult =
   | { status: "already_rsvped" }
   | { status: "event_full" }
   | { status: "event_not_found" };
+
+export type CancelRsvpResult =
+  | { status: "cancelled" }
+  | { status: "not_found" };
 
 function hasPgErrorCode(error: unknown, code: string): boolean {
   return (
@@ -72,4 +76,37 @@ export async function rsvpToEvent(
     }
     throw error;
   }
+}
+
+/**
+ * Cancels a player's RSVP, freeing their seat. No locking needed here
+ * (unlike rsvpToEvent): a delete can never cause overbooking, so there's
+ * nothing to race against capacity-wise.
+ */
+export async function cancelRsvp(
+  db: typeof Db,
+  eventId: number,
+  playerName: string,
+): Promise<CancelRsvpResult> {
+  const deleted = await db
+    .delete(rsvps)
+    .where(and(eq(rsvps.eventId, eventId), eq(rsvps.playerName, playerName)))
+    .returning();
+
+  return deleted.length > 0 ? { status: "cancelled" } : { status: "not_found" };
+}
+
+/** Whether a player already has an RSVP for an event. */
+export async function hasRsvped(
+  db: typeof Db,
+  eventId: number,
+  playerName: string,
+): Promise<boolean> {
+  const [row] = await db
+    .select({ id: rsvps.id })
+    .from(rsvps)
+    .where(and(eq(rsvps.eventId, eventId), eq(rsvps.playerName, playerName)))
+    .limit(1);
+
+  return row !== undefined;
 }

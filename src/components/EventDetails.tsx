@@ -131,7 +131,20 @@ function RsvpForm({ eventId, isFull }: { eventId: number; isFull: boolean }) {
       ? ""
       : window.localStorage.getItem(PLAYER_NAME_STORAGE_KEY) ?? "",
   );
-  const [confirmed, setConfirmed] = useState(false);
+  const trimmedName = playerName.trim();
+
+  // Whether this remembered name already has an RSVP here — read from the
+  // server (not local-only state) so "Cancel RSVP" shows correctly even
+  // after a page reload, not just right after submitting the form.
+  const myRsvpQuery = trpc.events.myRsvp.useQuery(
+    { eventId, playerName: trimmedName },
+    { enabled: trimmedName.length > 0 },
+  );
+
+  function invalidateEventState() {
+    void utils.events.byId.invalidate({ id: eventId });
+    void utils.events.myRsvp.invalidate({ eventId, playerName: trimmedName });
+  }
 
   const rsvpMutation = trpc.events.rsvp.useMutation({
     onSuccess: (_data, variables) => {
@@ -139,16 +152,36 @@ function RsvpForm({ eventId, isFull }: { eventId: number; isFull: boolean }) {
         PLAYER_NAME_STORAGE_KEY,
         variables.playerName,
       );
-      setConfirmed(true);
-      void utils.events.byId.invalidate({ id: eventId });
+      invalidateEventState();
     },
   });
 
-  if (confirmed) {
+  const cancelMutation = trpc.events.cancelRsvp.useMutation({
+    onSuccess: invalidateEventState,
+  });
+
+  if (myRsvpQuery.data?.rsvped) {
     return (
-      <p className="mt-4 text-sm font-medium text-emerald-600">
-        You&apos;re in, {playerName.trim()}! See you there.
-      </p>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-medium text-emerald-600">
+          You&apos;re in, {trimmedName}! See you there.
+        </p>
+        <button
+          type="button"
+          onClick={() =>
+            cancelMutation.mutate({ eventId, playerName: trimmedName })
+          }
+          disabled={cancelMutation.isPending}
+          className="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+        >
+          {cancelMutation.isPending ? "Cancelling…" : "Cancel RSVP"}
+        </button>
+        {cancelMutation.error && (
+          <p className="w-full text-sm text-rose-600">
+            Couldn&apos;t cancel your RSVP. Try again.
+          </p>
+        )}
+      </div>
     );
   }
 

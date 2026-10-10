@@ -6,7 +6,7 @@ import {
   listGameTypes,
   listUpcomingEvents,
 } from "../../events/listEvents";
-import { rsvpToEvent } from "../../events/rsvp";
+import { cancelRsvp, hasRsvped, rsvpToEvent } from "../../events/rsvp";
 import { publicProcedure, router } from "../init";
 
 export const eventsRouter = router({
@@ -73,5 +73,37 @@ export const eventsRouter = router({
       }
 
       return { status: "confirmed" as const };
+    }),
+
+  myRsvp: publicProcedure
+    .input(
+      z.object({
+        eventId: z.number().int().positive(),
+        playerName: z.string().trim().min(1).max(100),
+      }),
+    )
+    .query(async ({ input }) => {
+      const rsvped = await hasRsvped(db, input.eventId, input.playerName);
+      return { rsvped };
+    }),
+
+  cancelRsvp: publicProcedure
+    .input(
+      z.object({
+        eventId: z.number().int().positive(),
+        playerName: z.string().trim().min(1).max(100),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const result = await cancelRsvp(db, input.eventId, input.playerName);
+
+      if (result.status === "not_found") {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "You don't have an RSVP for this event.",
+        });
+      }
+
+      return { status: "cancelled" as const };
     }),
 });

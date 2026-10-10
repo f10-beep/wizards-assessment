@@ -69,7 +69,9 @@ rather than here.
   name (remembered client-side for next time), not a login — there's no
   accounts system in the brief, and `rsvps.playerName` already existed as
   a plain string. A duplicate RSVP from the same name on the same event is
-  rejected. See `TODO.md` for the migration path if authenticated
+  rejected, and cancelling an RSVP uses the same remembered name as proof
+  of "ownership" (no login to check against) — same trust model as RSVPing
+  itself. See `TODO.md` for the migration path if authenticated
   registration becomes a requirement later.
 - **Capacity-safe RSVPs required switching Neon's driver** (see
   [ADR 0003](./docs/decisions/0003-neon-pooled-transactional-driver.md)):
