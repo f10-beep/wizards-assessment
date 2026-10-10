@@ -1,0 +1,42 @@
+{
+  "name": "game-night",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/server/db/migrate.ts",
+    "db:seed": "tsx scripts/seed.ts",
+    "test": "NODE_ENV=test node --import tsx --test 'src/**/*.test.ts'"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "1.2.0",
+    "@tanstack/react-query": "5.104.1",
+    "@trpc/client": "11.19.0",
+    "@trpc/react-query": "11.19.0",
+    "@trpc/server": "11.19.0",
+    "drizzle-orm": "0.45.4",
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "26.6.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "drizzle-kit": "0.31.11",
+    "eslint": "10.12.0",
+    "eslint-config-next": "16.4.0",
+    "tailwindcss": "4.3.3",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3"
+  }
+}
