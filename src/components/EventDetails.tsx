@@ -4,6 +4,7 @@ import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
 import { useStoredIsOrganizer } from "@/lib/roles";
 import { useStoredUserPrincipal } from "@/lib/userPrincipal";
+import { useDebouncedValue } from "@/lib/useDebouncedValue";
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
   weekday: "long",
@@ -129,7 +130,7 @@ function EventDetailsCard({ event }: { event: EventDetailData }) {
 function AttendeeRoster({ eventId }: { eventId: number }) {
   const userPrincipal = useStoredUserPrincipal();
   const isOrganizer = useStoredIsOrganizer();
-  const trimmedPrincipal = userPrincipal.trim();
+  const trimmedPrincipal = useDebouncedValue(userPrincipal.trim(), 300);
   const enabled = isOrganizer && trimmedPrincipal.length > 0;
 
   const attendeesQuery = trpc.events.attendees.useQuery(
@@ -172,7 +173,7 @@ function RsvpForm({ eventId, isFull }: { eventId: number; isFull: boolean }) {
   const utils = trpc.useUtils();
   const userPrincipal = useStoredUserPrincipal();
   const isOrganizer = useStoredIsOrganizer();
-  const trimmedPrincipal = userPrincipal.trim();
+  const trimmedPrincipal = useDebouncedValue(userPrincipal.trim(), 300);
 
   // Whether this remembered principal already has an RSVP here — read
   // from the server (not local-only state) so "Cancel RSVP" shows

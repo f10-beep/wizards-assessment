@@ -14,6 +14,14 @@ const t = initTRPC.create({
         message: error.cause.issues.map((issue) => issue.message).join("; "),
       };
     }
+    // Every other TRPCError thrown deliberately (NOT_FOUND, CONFLICT,
+    // FORBIDDEN, ...) sets its own client-safe message at the throw site.
+    // INTERNAL_SERVER_ERROR is different: tRPC assigns it to anything
+    // unhandled and falls back to that underlying error's own message
+    // (e.g. a raw Postgres driver error), which isn't client-safe.
+    if (error.code === "INTERNAL_SERVER_ERROR") {
+      return { ...shape, message: "Something went wrong. Try again." };
+    }
     return shape;
   },
 });

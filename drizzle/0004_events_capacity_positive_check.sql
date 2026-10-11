@@ -1,0 +1,1 @@
+ALTER TABLE "events" ADD CONSTRAINT "capacity_positive" CHECK ("events"."capacity" > 0);

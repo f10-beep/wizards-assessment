@@ -1,24 +1,41 @@
-import { integer, pgTable, text, timestamp, unique } from "drizzle-orm/pg-core";
+import {
+  check,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+  unique,
+} from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
-export const events = pgTable("events", {
-  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-  title: text("title").notNull(),
-  gameType: text("game_type").notNull(),
-  location: text("location").notNull(),
-  startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
-  capacity: integer("capacity").notNull(),
-  // Who posted this event, in the same opaque-principal shape as
-  // rsvps.userPrincipal — see docs/decisions/0005-user-principal-identity.md
-  // and docs/decisions/0006-organizer-role-claim.md. Ownership, not the
-  // organizer role check itself (that's requireOrganizer in
-  // src/server/auth/roles.ts) — "may manage this event" is "is this
-  // principal," separate from "may this actor act as an organizer at
-  // all."
-  organizerPrincipal: text("organizer_principal").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const events = pgTable(
+  "events",
+  {
+    id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+    title: text("title").notNull(),
+    gameType: text("game_type").notNull(),
+    location: text("location").notNull(),
+    startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+    capacity: integer("capacity").notNull(),
+    // Who posted this event, in the same opaque-principal shape as
+    // rsvps.userPrincipal — see docs/decisions/0005-user-principal-identity.md
+    // and docs/decisions/0006-organizer-role-claim.md. Ownership, not the
+    // organizer role check itself (that's requireOrganizer in
+    // src/server/auth/roles.ts) — "may manage this event" is "is this
+    // principal," separate from "may this actor act as an organizer at
+    // all."
+    organizerPrincipal: text("organizer_principal").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  // Backstop below the zod check on events.create's input — a positive
+  // capacity is a real invariant of the domain, not just a form rule, so
+  // any write path that bypasses the tRPC boundary (a future script,
+  // direct backfill) still can't produce a 0/negative capacity that
+  // would divide-by-zero or go negative in the UI's seats-left math.
+  (table) => [check("capacity_positive", sql`${table.capacity} > 0`)],
+);
 
 export const rsvps = pgTable(
   "rsvps",

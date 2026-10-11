@@ -48,6 +48,42 @@ than letting them pile up.
 
 ## Done
 
+- [x] Fixed bugs found by a pre-ship `/code-review xhigh` pass over the
+      whole repo (full findings/verification not reproduced here, see
+      review transcript):
+      - `drizzle/0003_add_event_organizer_principal.sql` added a NOT NULL
+        column with no DEFAULT, so `db:migrate` fails against a non-empty
+        `events` table (e.g. a local dev DB seeded before this migration
+        existed). Fixed by backfilling `''` before enforcing NOT NULL —
+        safe to edit in place rather than fix-forward (unlike
+        0002_fix_rsvp_event_fk_schema_qualification.sql's precedent)
+        because drizzle's migrator gates on each migration's journal
+        timestamp, not file content, so already-migrated databases just
+        skip it unchanged.
+      - `EventDetails.tsx`'s `AttendeeRoster`/`RsvpForm` queries were keyed
+        directly on the un-debounced global identity field, firing a
+        request per keystroke — the same bug class already fixed once in
+        `MyEvents.tsx` via `useDebouncedValue`, but never centralized.
+        Applied the same fix here.
+      - `init.ts`'s `errorFormatter` only sanitized zod `BAD_REQUEST`
+        messages; any unhandled error (e.g. a raw Postgres driver failure)
+        shipped its raw message as `INTERNAL_SERVER_ERROR` to the HTTP
+        client. Now replaced with a generic message for that code —
+        deliberate business-rule `TRPCError`s (`NOT_FOUND`/`CONFLICT`/
+        `FORBIDDEN`/zod `BAD_REQUEST`) are untouched since they already
+        set their own client-safe message at the throw site. Regression
+        test added in `init.test.ts` using a throwaway router built from
+        the same `t`.
+      - `CreateEventForm.tsx` parsed capacity with `Number.parseInt`,
+        which silently truncates at the first non-digit — `"1e3"` became
+        `1` instead of `1000` (or `"8.5"` became `8` instead of being
+        rejected). Switched to `Number()`, which parses the whole string
+        or fails.
+      - Added a DB-level `CHECK (capacity > 0)` on `events`
+        (`drizzle/0004_events_capacity_positive_check.sql`) as a backstop
+        below the zod check on `events.create`'s input, so a future write
+        path that bypasses the tRPC boundary can't insert a non-positive
+        capacity.
 - [x] S4 validation: confirmed invalid input (bad capacity, past dates,
       unknown IDs) is rejected server-side with clear errors. Capacity
       bounds/types and `startsAt` format were already zod-enforced at

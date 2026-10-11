@@ -29,6 +29,13 @@
       "when": 1791667023975,
       "tag": "0003_add_event_organizer_principal",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791680888345,
+      "tag": "0004_events_capacity_positive_check",
+      "breakpoints": true
     }
   ]
 }

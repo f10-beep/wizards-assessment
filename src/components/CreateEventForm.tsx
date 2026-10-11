@@ -55,7 +55,10 @@ export function CreateEventForm() {
     );
   }
 
-  const parsedCapacity = Number.parseInt(capacity, 10);
+  // Number() (not parseInt, which stops at the first non-digit and would
+  // silently read "1e3" as 1 instead of rejecting or expanding it) parses
+  // the whole string or fails.
+  const parsedCapacity = Number(capacity);
   const canSubmit =
     title.trim().length > 0 &&
     gameType.trim().length > 0 &&
