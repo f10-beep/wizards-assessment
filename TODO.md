@@ -84,6 +84,13 @@ than letting them pile up.
         below the zod check on `events.create`'s input, so a future write
         path that bypasses the tRPC boundary can't insert a non-positive
         capacity.
+- [x] Cleanup from the same `/code-review xhigh` pass, bundled separately
+      from the bug fixes above since none of it changes behavior:
+      centralized the poll-interval constant (`src/lib/pollInterval.ts`),
+      the capacity/seats-left math (`src/lib/capacity.ts`), the trimmed-
+      principal hook (`useStoredTrimmedUserPrincipal`), the "not signed
+      in" notice (`NotSignedInNotice.tsx`), removed the unused `dbKind`
+      export, and parallelized `scripts/seed.ts`'s independent inserts.
 - [x] S4 validation: confirmed invalid input (bad capacity, past dates,
       unknown IDs) is rejected server-side with clear errors. Capacity
       bounds/types and `startsAt` format were already zod-enforced at

@@ -2,17 +2,15 @@
 
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
-import { useStoredUserPrincipal } from "@/lib/userPrincipal";
+import { useStoredTrimmedUserPrincipal } from "@/lib/userPrincipal";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
+import { POLL_INTERVAL_MS } from "@/lib/pollInterval";
 import { EventCard } from "./EventCard";
-
-// Refetch periodically so attendee counts stay close to current while
-// someone is viewing — see docs/decisions/0002-mvp-stack.md.
-const POLL_INTERVAL_MS = 30_000;
+import { NotSignedInNotice } from "./NotSignedInNotice";
 
 export function MyEvents() {
-  const userPrincipal = useStoredUserPrincipal();
-  const trimmedPrincipal = useDebouncedValue(userPrincipal.trim(), 300);
+  const userPrincipal = useStoredTrimmedUserPrincipal();
+  const trimmedPrincipal = useDebouncedValue(userPrincipal, 300);
 
   const myEventsQuery = trpc.events.myEvents.useQuery(
     { userPrincipal: trimmedPrincipal },
@@ -35,9 +33,7 @@ export function MyEvents() {
         </p>
       </header>
 
-      {trimmedPrincipal.length === 0 && (
-        <p className="text-sm text-slate-500">You&apos;re not signed in.</p>
-      )}
+      {trimmedPrincipal.length === 0 && <NotSignedInNotice />}
 
       {myEventsQuery.isLoading && (
         <p className="text-sm text-slate-500">Loading your events…</p>

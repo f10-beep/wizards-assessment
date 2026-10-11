@@ -5,11 +5,8 @@ import { useState } from "react";
 import { useStoredIsOrganizer } from "@/lib/roles";
 import { trpc } from "@/lib/trpc/client";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
+import { POLL_INTERVAL_MS } from "@/lib/pollInterval";
 import { EventCard } from "./EventCard";
-
-// Refetch periodically so attendee counts / fullness stay close to current
-// while someone is browsing (MVP polling — see docs/decisions/0002-mvp-stack.md).
-const POLL_INTERVAL_MS = 30_000;
 
 export function EventBrowser() {
   const [search, setSearch] = useState("");

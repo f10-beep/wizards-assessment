@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { eventCapacityStatus } from "@/lib/capacity";
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
   weekday: "short",
@@ -19,8 +20,10 @@ export type EventCardData = {
 };
 
 export function EventCard({ event }: { event: EventCardData }) {
-  const spotsLeft = event.capacity - event.attendeeCount;
-  const isFull = spotsLeft <= 0;
+  const { spotsLeft, isFull, fillPercent } = eventCapacityStatus(
+    event.capacity,
+    event.attendeeCount,
+  );
 
   return (
     <Link
@@ -62,9 +65,7 @@ export function EventCard({ event }: { event: EventCardData }) {
         <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
           <div
             className={`h-full rounded-full ${isFull ? "bg-rose-500" : "bg-emerald-500"}`}
-            style={{
-              width: `${Math.min(100, (event.attendeeCount / event.capacity) * 100)}%`,
-            }}
+            style={{ width: `${fillPercent}%` }}
           />
         </div>
       </div>

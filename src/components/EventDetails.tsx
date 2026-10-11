@@ -3,8 +3,11 @@
 import Link from "next/link";
 import { trpc } from "@/lib/trpc/client";
 import { useStoredIsOrganizer } from "@/lib/roles";
-import { useStoredUserPrincipal } from "@/lib/userPrincipal";
+import { useStoredTrimmedUserPrincipal } from "@/lib/userPrincipal";
 import { useDebouncedValue } from "@/lib/useDebouncedValue";
+import { POLL_INTERVAL_MS } from "@/lib/pollInterval";
+import { eventCapacityStatus } from "@/lib/capacity";
+import { NotSignedInNotice } from "./NotSignedInNotice";
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
   weekday: "long",
@@ -13,10 +16,6 @@ const dateFormatter = new Intl.DateTimeFormat(undefined, {
   hour: "numeric",
   minute: "2-digit",
 });
-
-// Refetch periodically so seats-left stays close to current while someone
-// is viewing (MVP polling — see docs/decisions/0002-mvp-stack.md).
-const POLL_INTERVAL_MS = 30_000;
 
 export function EventDetails({ eventId }: { eventId: number }) {
   const eventQuery = trpc.events.byId.useQuery(
@@ -67,8 +66,10 @@ type EventDetailData = {
 };
 
 function EventDetailsCard({ event }: { event: EventDetailData }) {
-  const spotsLeft = Math.max(0, event.capacity - event.attendeeCount);
-  const isFull = spotsLeft <= 0;
+  const { spotsLeft, isFull, fillPercent } = eventCapacityStatus(
+    event.capacity,
+    event.attendeeCount,
+  );
 
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -107,9 +108,7 @@ function EventDetailsCard({ event }: { event: EventDetailData }) {
         <div className="mt-1.5 h-2 w-full overflow-hidden rounded-full bg-slate-100">
           <div
             className={`h-full rounded-full ${isFull ? "bg-rose-500" : "bg-emerald-500"}`}
-            style={{
-              width: `${Math.min(100, (event.attendeeCount / event.capacity) * 100)}%`,
-            }}
+            style={{ width: `${fillPercent}%` }}
           />
         </div>
       </div>
@@ -128,9 +127,9 @@ function EventDetailsCard({ event }: { event: EventDetailData }) {
  * viewing most events won't own them.
  */
 function AttendeeRoster({ eventId }: { eventId: number }) {
-  const userPrincipal = useStoredUserPrincipal();
+  const userPrincipal = useStoredTrimmedUserPrincipal();
   const isOrganizer = useStoredIsOrganizer();
-  const trimmedPrincipal = useDebouncedValue(userPrincipal.trim(), 300);
+  const trimmedPrincipal = useDebouncedValue(userPrincipal, 300);
   const enabled = isOrganizer && trimmedPrincipal.length > 0;
 
   const attendeesQuery = trpc.events.attendees.useQuery(
@@ -171,9 +170,9 @@ function AttendeeRoster({ eventId }: { eventId: number }) {
 
 function RsvpForm({ eventId, isFull }: { eventId: number; isFull: boolean }) {
   const utils = trpc.useUtils();
-  const userPrincipal = useStoredUserPrincipal();
+  const userPrincipal = useStoredTrimmedUserPrincipal();
   const isOrganizer = useStoredIsOrganizer();
-  const trimmedPrincipal = useDebouncedValue(userPrincipal.trim(), 300);
+  const trimmedPrincipal = useDebouncedValue(userPrincipal, 300);
 
   // Whether this remembered principal already has an RSVP here — read
   // from the server (not local-only state) so "Cancel RSVP" shows
@@ -209,9 +208,7 @@ function RsvpForm({ eventId, isFull }: { eventId: number; isFull: boolean }) {
   });
 
   if (trimmedPrincipal.length === 0) {
-    return (
-      <p className="mt-4 text-sm text-slate-500">You&apos;re not signed in.</p>
-    );
+    return <NotSignedInNotice />;
   }
 
   if (myRsvpQuery.data?.rsvped) {

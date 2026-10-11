@@ -32,4 +32,3 @@ function createDb() {
 
 export const dbResult = createDb();
 export const db = dbResult.db;
-export const dbKind = dbResult.kind;

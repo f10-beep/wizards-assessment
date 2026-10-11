@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useStoredIsOrganizer } from "@/lib/roles";
 import { trpc } from "@/lib/trpc/client";
-import { useStoredUserPrincipal } from "@/lib/userPrincipal";
+import { useStoredTrimmedUserPrincipal } from "@/lib/userPrincipal";
+import { NotSignedInNotice } from "./NotSignedInNotice";
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
@@ -23,9 +24,8 @@ function Shell({ children }: { children: React.ReactNode }) {
 
 export function CreateEventForm() {
   const router = useRouter();
-  const organizerPrincipal = useStoredUserPrincipal();
+  const trimmedOrganizer = useStoredTrimmedUserPrincipal();
   const isOrganizer = useStoredIsOrganizer();
-  const trimmedOrganizer = organizerPrincipal.trim();
 
   const [title, setTitle] = useState("");
   const [gameType, setGameType] = useState("");
@@ -42,7 +42,7 @@ export function CreateEventForm() {
   if (trimmedOrganizer.length === 0) {
     return (
       <Shell>
-        <p className="mt-4 text-sm text-slate-500">You&apos;re not signed in.</p>
+        <NotSignedInNotice />
       </Shell>
     );
   }

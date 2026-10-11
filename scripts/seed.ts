@@ -100,30 +100,34 @@ async function main() {
   // Cascades to rsvps via the FK's onDelete, so this alone resets both tables.
   await db.delete(events);
 
-  for (const sample of sampleEvents) {
-    const insertedRows = await db
-      .insert(events)
-      .values({
-        title: sample.title,
-        gameType: sample.gameType,
-        location: sample.location,
-        startsAt: sample.startsAt,
-        capacity: sample.capacity,
-        organizerPrincipal: sample.organizerPrincipal,
-      })
-      .returning();
-    const inserted = insertedRows[0];
-    if (!inserted) throw new Error(`insert of "${sample.title}" returned no rows`);
+  // The sample events are independent of each other, so insert them
+  // concurrently instead of one round trip at a time.
+  await Promise.all(
+    sampleEvents.map(async (sample) => {
+      const insertedRows = await db
+        .insert(events)
+        .values({
+          title: sample.title,
+          gameType: sample.gameType,
+          location: sample.location,
+          startsAt: sample.startsAt,
+          capacity: sample.capacity,
+          organizerPrincipal: sample.organizerPrincipal,
+        })
+        .returning();
+      const inserted = insertedRows[0];
+      if (!inserted) throw new Error(`insert of "${sample.title}" returned no rows`);
 
-    if (sample.attendees.length > 0) {
-      await db.insert(rsvps).values(
-        sample.attendees.map((userPrincipal) => ({
-          eventId: inserted.id,
-          userPrincipal,
-        })),
-      );
-    }
-  }
+      if (sample.attendees.length > 0) {
+        await db.insert(rsvps).values(
+          sample.attendees.map((userPrincipal) => ({
+            eventId: inserted.id,
+            userPrincipal,
+          })),
+        );
+      }
+    }),
+  );
 
   console.log(`Seeded ${sampleEvents.length} events.`);
 }

@@ -36,6 +36,16 @@ export function useStoredUserPrincipal(): string {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
+/**
+ * Same as useStoredUserPrincipal, trimmed — every consumer except
+ * StubAuthBar's own raw, editable input field wants the trimmed form (an
+ * identity key, not display text being typed), so trim once here instead
+ * of at each call site.
+ */
+export function useStoredTrimmedUserPrincipal(): string {
+  return useStoredUserPrincipal().trim();
+}
+
 export function setStoredUserPrincipal(principal: string): void {
   window.localStorage.setItem(USER_PRINCIPAL_STORAGE_KEY, principal);
   // The native "storage" event only fires in *other* tabs, not this one —
