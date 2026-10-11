@@ -4,6 +4,8 @@ A community event board for tabletop-game players: organizers post events
 with a fixed seating capacity, players browse and RSVP first-come,
 first-served.
 
+Live: https://wizards-assessment.vercel.app/
+
 Development conventions live in [`AGENTS.md`](./AGENTS.md); non-obvious or
 costly-to-reverse decisions and their alternatives live in
 [`docs/decisions/`](./docs/decisions/README.md); current status and
@@ -88,8 +90,9 @@ What's stubbed/simplified, and what I'd harden first:
 
 - **Auth**: `StubAuthBar` self-asserted identity/role, no real sessions
   — see `TODO.md`/ADR 0005/0006 for the migration path
-- **Deployment**: not deployed; verified locally only. Target is
-  Vercel + Neon (ADR 0002)
+- **Deployment**: live at https://wizards-assessment.vercel.app/ (Vercel +
+  Neon, per ADR 0002). No staging environment, no rollback automation
+  beyond Vercel's own deployment history
 - **Persistence**: single local Postgres container, no backups
 - **Observability**: `console.error` only, no logging/metrics/alerting
 - **Abuse protection**: no rate limiting on any mutation
